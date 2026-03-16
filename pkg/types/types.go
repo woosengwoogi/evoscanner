@@ -2,7 +2,9 @@
 package types
 
 import (
+	"encoding/json"
 	"fmt"
+	"os"
 	"time"
 )
 
@@ -124,6 +126,42 @@ type ScanResult struct {
 	Summary   Summary   `json:"summary"`
 }
 
+// ScanState represents the current state of a scan for resumption.
+type ScanState struct {
+	TargetURL       string          `json:"target_url"`
+	CompletedChecks int64           `json:"completed_checks"`
+	TotalChecks     int64           `json:"total_checks"`
+	Findings        []Finding       `json:"findings"`
+	StartTime       time.Time       `json:"start_time"`
+	ProcessedURLs   map[string]bool `json:"processed_urls"`
+	CheckpointTime  time.Time       `json:"checkpoint_time"`
+}
+
+// SaveCheckpoint saves the current scan state to a file.
+func SaveCheckpoint(state *ScanState, path string) error {
+	data, err := json.MarshalIndent(state, "", "  ")
+	if err != nil {
+		return fmt.Errorf("marshaling state: %w", err)
+	}
+	if err := os.WriteFile(path, data, 0644); err != nil {
+		return fmt.Errorf("writing checkpoint: %w", err)
+	}
+	return nil
+}
+
+// LoadCheckpoint loads a scan state from a file.
+func LoadCheckpoint(path string) (*ScanState, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("reading checkpoint: %w", err)
+	}
+	var state ScanState
+	if err := json.Unmarshal(data, &state); err != nil {
+		return nil, fmt.Errorf("unmarshaling state: %w", err)
+	}
+	return &state, nil
+}
+
 // Summary provides scan statistics.
 type Summary struct {
 	TotalChecks   int            `json:"total_checks"`
@@ -160,6 +198,9 @@ type ScanConfig struct {
 	ProbeCount      int           `json:"probe_count"`      // Number of URLs to probe for latency measurement
 	SlowThreshold   time.Duration `json:"slow_threshold"`   // Threshold to consider a response as slow
 	NoHangMode      bool          `json:"no_hang_mode"`     // Skip endpoints that don't respond within timeout
+	CheckpointPath  string        `json:"checkpoint_path"`  // Path to save/load checkpoint
+	MaxRetries      int           `json:"max_retries"`      // Maximum retry attempts
+	FastMode        bool          `json:"fast_mode"`        // Fast mode optimizations
 }
 
 // DefaultConfig returns a sane default configuration.

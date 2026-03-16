@@ -95,7 +95,7 @@ func cmdScan(args []string) {
 
 	// Scan behavior
 	threads := fs.Int("threads", 10, "Number of concurrent threads")
-	maxThreads := fs.Int("max-threads", 50, "Maximum threads for adaptive mode")
+	maxThreads := fs.Int("max-threads", 100, "Maximum threads for adaptive mode")
 	adaptive := fs.Bool("adaptive-threads", false, "Enable adaptive thread adjustment based on response time")
 	probeCount := fs.Int("probe-count", 5, "Number of URLs to probe for latency measurement")
 	slowThreshold := fs.Duration("slow-threshold", 5*time.Second, "Threshold to consider a response as slow")
@@ -103,7 +103,9 @@ func cmdScan(args []string) {
 	timeout := fs.Duration("timeout", 30*time.Second, "HTTP request timeout")
 	maxDepth := fs.Int("depth", 3, "Maximum crawl depth")
 	maxRequests := fs.Int("max-requests", 1000, "Maximum number of HTTP requests")
-	delay := fs.Int("delay", 100, "Delay between requests in milliseconds")
+	delay := fs.Int("delay", 100, "Delay between requests in milliseconds (0=disable)")
+	maxRetries := fs.Int("max-retries", 2, "Maximum retry attempts for failed requests")
+	fastMode := fs.Bool("fast", false, "Fast mode: disable delay, reduce retries, increase connections")
 	noCrawl := fs.Bool("no-crawl", false, "Skip crawling, scan target URL only")
 
 	// HTTP options
@@ -126,8 +128,10 @@ func cmdScan(args []string) {
 	outputFormat := fs.String("format", "json", "Output format: json, html")
 	outputFile := fs.String("output", "", "Output file path (default: stdout)")
 	outputShort := fs.String("o", "", "Output file path (shorthand)")
+	logFile := fs.String("log-file", "", "Log file path (default: log/evoscanner-YYYYMMDD-HHMMSS.log)")
 	verbose := fs.Bool("verbose", false, "Enable verbose output")
 	verboseShort := fs.Bool("v", false, "Enable verbose output (shorthand)")
+	resume := fs.String("resume", "", "Resume from checkpoint file (log/evoscanner-XXXXXX.json)")
 
 	// OOB callback
 	callbackURL := fs.String("callback-url", "", "OOB callback URL for Log4j/SSRF detection")
@@ -195,6 +199,21 @@ func cmdScan(args []string) {
 	}
 
 	// Build config
+	// Generate checkpoint path
+	checkpointPath := *resume
+	if checkpointPath == "" {
+		os.MkdirAll("log", 0755)
+		checkpointPath = fmt.Sprintf("log/checkpoint-%s.json", time.Now().Format("20060102-150405"))
+	}
+
+	// Apply fast mode optimizations
+	if *fastMode {
+		*delay = 0
+		*maxRetries = 0
+		*threads = 50
+		log.Printf("[*] Fast mode enabled: delay=0, retries=0, threads=50")
+	}
+
 	config := &types.ScanConfig{
 		TargetURL:       targetURL,
 		Threads:         *threads,
@@ -219,6 +238,22 @@ func cmdScan(args []string) {
 		ProbeCount:      *probeCount,
 		SlowThreshold:   *slowThreshold,
 		NoHangMode:      *noHang,
+		CheckpointPath:  checkpointPath,
+		MaxRetries:      *maxRetries,
+		FastMode:        *fastMode,
+	}
+
+	// Load checkpoint if resuming
+	var loadedState *types.ScanState
+	if *resume != "" {
+		var err error
+		loadedState, err = types.LoadCheckpoint(*resume)
+		if err != nil {
+			log.Printf("[WARN] Failed to load checkpoint: %v", err)
+		} else {
+			fmt.Printf("[*] Resuming from checkpoint: %d/%d checks completed\n",
+				loadedState.CompletedChecks, loadedState.TotalChecks)
+		}
 	}
 
 	// Setup context with signal handling
@@ -232,6 +267,26 @@ func cmdScan(args []string) {
 		fmt.Println("\n[!] Interrupt received, shutting down...")
 		cancel()
 	}()
+
+	// Setup log output (default: save to log/evoscanner-YYYYMMDD-HHMMSS.log)
+	logPath := *logFile
+	if logPath == "" {
+		if err := os.MkdirAll("log", 0755); err != nil {
+			log.Printf("[WARN] Failed to create log directory: %v", err)
+		} else {
+			logPath = fmt.Sprintf("log/evoscanner-%s.log", time.Now().Format("20060102-150405"))
+		}
+	}
+	if logPath != "" {
+		f, err := os.OpenFile(logPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+		if err != nil {
+			log.Printf("[WARN] Failed to open log file: %v", err)
+		} else {
+			defer f.Close()
+			log.SetFlags(log.LstdFlags | log.Lshortfile)
+			log.SetOutput(f)
+		}
+	}
 
 	// Print banner
 	if isVerbose {
@@ -357,7 +412,7 @@ func cmdScan(args []string) {
 	fmt.Println("[*] Starting vulnerability scan...")
 	engine := scanner.NewEngine(config, registry, httpClient)
 
-	result, err := engine.Scan(ctx, scanTarget)
+	result, err := engine.Scan(ctx, scanTarget, loadedState)
 	if err != nil {
 		log.Fatalf("[ERROR] Scan failed: %v", err)
 	}

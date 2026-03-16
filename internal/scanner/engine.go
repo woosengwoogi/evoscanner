@@ -50,8 +50,18 @@ func NewEngine(config *types.ScanConfig, registry *Registry, client HttpClient) 
 }
 
 // Scan runs all registered plugins against the target.
-func (e *Engine) Scan(ctx context.Context, target *types.Target) (*types.ScanResult, error) {
+func (e *Engine) Scan(ctx context.Context, target *types.Target, loadedState *types.ScanState) (*types.ScanResult, error) {
 	e.stats.StartTime = time.Now()
+
+	// Load checkpoint if resuming
+	if loadedState != nil {
+		e.stats.CompletedChecks = loadedState.CompletedChecks
+		for _, f := range loadedState.Findings {
+			e.findings = append(e.findings, f)
+		}
+		e.stats.TotalFindings = int64(len(e.findings))
+		log.Printf("[*] Resumed with %d completed checks, %d findings", loadedState.CompletedChecks, len(e.findings))
+	}
 
 	// Initialize adaptive thread management if enabled
 	if e.config.AdaptiveThreads {
@@ -121,7 +131,24 @@ func (e *Engine) Scan(ctx context.Context, target *types.Target) (*types.ScanRes
 
 	// Start progress display goroutine
 	progressDone := make(chan struct{})
+	checkpointDone := make(chan struct{})
 	go e.progressLoop(progressDone)
+
+	// Start checkpoint save goroutine
+	go func() {
+		ticker := time.NewTicker(30 * time.Second)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-checkpointDone:
+				return
+			case <-ticker.C:
+				e.saveCheckpoint(target.BaseURL)
+			case <-progressDone:
+				return
+			}
+		}
+	}()
 
 	// Run work items with bounded concurrency
 	currentThreads := e.getCurrentThreads()
@@ -499,4 +526,26 @@ func (e *Engine) getCurrentThreads() int {
 		return int(e.currentThreads.Load())
 	}
 	return e.config.Threads
+}
+
+// saveCheckpoint saves the current scan state to a file.
+func (e *Engine) saveCheckpoint(targetURL string) {
+	if e.config.CheckpointPath == "" {
+		return
+	}
+
+	state := &types.ScanState{
+		TargetURL:       targetURL,
+		CompletedChecks: atomic.LoadInt64(&e.stats.CompletedChecks),
+		TotalChecks:     atomic.LoadInt64(&e.stats.TotalChecks),
+		Findings:        e.findings,
+		StartTime:       e.stats.StartTime,
+		CheckpointTime:  time.Now(),
+	}
+
+	if err := types.SaveCheckpoint(state, e.config.CheckpointPath); err != nil {
+		log.Printf("[WARN] Failed to save checkpoint: %v", err)
+	} else {
+		log.Printf("[*] Checkpoint saved: %d/%d checks", state.CompletedChecks, state.TotalChecks)
+	}
 }

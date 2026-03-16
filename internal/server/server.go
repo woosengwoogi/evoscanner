@@ -282,7 +282,7 @@ func (s *Server) runScan(scanID, targetURL string, threads, maxDepth int, timeou
 	log.Printf("[*] [%s] Running vulnerability scan...", scanID)
 	engine := scanner.NewEngine(config, registry, httpClient)
 
-	scanResult, err := engine.Scan(ctx, target)
+	scanResult, err := engine.Scan(ctx, target, nil)
 	if err != nil {
 		log.Printf("[!] [%s] Scan error: %v", scanID, err)
 		s.updateScanStatus(scanID, "failed")

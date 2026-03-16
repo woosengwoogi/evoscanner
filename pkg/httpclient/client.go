@@ -30,13 +30,28 @@ type Client struct {
 
 // New creates a new HTTP client from scan config.
 func New(config *types.ScanConfig) *Client {
+	// Dynamic connection pool based on threads and fast mode
+	maxIdleConnsPerHost := 10
+	maxIdleConns := 100
+
+	if config.FastMode {
+		maxIdleConnsPerHost = config.Threads * 2
+		maxIdleConns = config.Threads * 4
+		if maxIdleConnsPerHost > 200 {
+			maxIdleConnsPerHost = 200
+		}
+		if maxIdleConns > 500 {
+			maxIdleConns = 500
+		}
+	}
+
 	transport := &http.Transport{
 		DialContext: (&net.Dialer{
 			Timeout:   10 * time.Second,
 			KeepAlive: 30 * time.Second,
 		}).DialContext,
-		MaxIdleConns:        100,
-		MaxIdleConnsPerHost: 10,
+		MaxIdleConns:        maxIdleConns,
+		MaxIdleConnsPerHost: maxIdleConnsPerHost,
 		IdleConnTimeout:     90 * time.Second,
 		TLSHandshakeTimeout: 10 * time.Second,
 		TLSClientConfig: &tls.Config{
@@ -62,6 +77,11 @@ func New(config *types.ScanConfig) *Client {
 		return nil
 	}
 
+	maxRetries := config.MaxRetries
+	if maxRetries < 0 {
+		maxRetries = 0
+	}
+
 	return &Client{
 		httpClient: &http.Client{
 			Timeout:       config.Timeout,
@@ -69,7 +89,7 @@ func New(config *types.ScanConfig) *Client {
 			CheckRedirect: redirectPolicy,
 		},
 		config:          config,
-		maxRetries:      2,
+		maxRetries:      maxRetries,
 		recentLatencies: make([]int64, 0, 20),
 	}
 }
@@ -91,9 +111,13 @@ func (c *Client) Do(ctx context.Context, req *scanner.Request) (*scanner.Respons
 			return nil, ctx.Err()
 		}
 
-		// Brief backoff before retry
+		// Brief backoff before retry (faster in fast mode)
 		if attempt < c.maxRetries {
-			time.Sleep(time.Duration(attempt+1) * 500 * time.Millisecond)
+			backoffMs := 500
+			if c.config.FastMode {
+				backoffMs = 100
+			}
+			time.Sleep(time.Duration(backoffMs) * time.Millisecond)
 		}
 	}
 
