@@ -95,6 +95,11 @@ func cmdScan(args []string) {
 
 	// Scan behavior
 	threads := fs.Int("threads", 10, "Number of concurrent threads")
+	maxThreads := fs.Int("max-threads", 50, "Maximum threads for adaptive mode")
+	adaptive := fs.Bool("adaptive-threads", false, "Enable adaptive thread adjustment based on response time")
+	probeCount := fs.Int("probe-count", 5, "Number of URLs to probe for latency measurement")
+	slowThreshold := fs.Duration("slow-threshold", 5*time.Second, "Threshold to consider a response as slow")
+	noHang := fs.Bool("no-hang", false, "Skip endpoints that don't respond within timeout")
 	timeout := fs.Duration("timeout", 30*time.Second, "HTTP request timeout")
 	maxDepth := fs.Int("depth", 3, "Maximum crawl depth")
 	maxRequests := fs.Int("max-requests", 1000, "Maximum number of HTTP requests")
@@ -191,24 +196,29 @@ func cmdScan(args []string) {
 
 	// Build config
 	config := &types.ScanConfig{
-		TargetURL:      targetURL,
-		Threads:        *threads,
-		Timeout:        *timeout,
-		MaxDepth:       *maxDepth,
-		MaxRequests:    *maxRequests,
-		DelayMs:        *delay,
-		UserAgent:      *userAgent,
-		Proxy:          *proxy,
-		Headers:        headerMap,
-		Cookies:        *cookies,
-		PluginFilter:   pluginIDs,
-		ExcludePlugins: excludeIDs,
-		OutputFormat:   *outputFormat,
-		OutputFile:     outFile,
-		Verbose:        isVerbose,
-		FollowRedirect: *followRedirect,
-		VerifySSL:      *verifySSL,
-		CallbackURL:    *callbackURL,
+		TargetURL:       targetURL,
+		Threads:         *threads,
+		MaxThreads:      *maxThreads,
+		Timeout:         *timeout,
+		MaxDepth:        *maxDepth,
+		MaxRequests:     *maxRequests,
+		DelayMs:         *delay,
+		UserAgent:       *userAgent,
+		Proxy:           *proxy,
+		Headers:         headerMap,
+		Cookies:         *cookies,
+		PluginFilter:    pluginIDs,
+		ExcludePlugins:  excludeIDs,
+		OutputFormat:    *outputFormat,
+		OutputFile:      outFile,
+		Verbose:         isVerbose,
+		FollowRedirect:  *followRedirect,
+		VerifySSL:       *verifySSL,
+		CallbackURL:     *callbackURL,
+		AdaptiveThreads: *adaptive,
+		ProbeCount:      *probeCount,
+		SlowThreshold:   *slowThreshold,
+		NoHangMode:      *noHang,
 	}
 
 	// Setup context with signal handling
@@ -229,7 +239,12 @@ func cmdScan(args []string) {
 	}
 
 	fmt.Printf("[*] Target: %s\n", targetURL)
-	fmt.Printf("[*] Threads: %d | Timeout: %s | Max Depth: %d\n", config.Threads, config.Timeout, config.MaxDepth)
+	if config.AdaptiveThreads {
+		fmt.Printf("[*] Threads: %d->%d (adaptive) | Timeout: %s | Max Depth: %d | NoHang: %v\n",
+			config.Threads, config.MaxThreads, config.Timeout, config.MaxDepth, config.NoHangMode)
+	} else {
+		fmt.Printf("[*] Threads: %d | Timeout: %s | Max Depth: %d\n", config.Threads, config.Timeout, config.MaxDepth)
+	}
 
 	// Initialize HTTP client (implements scanner.HttpClient directly)
 	httpClient := httpclient.New(config)

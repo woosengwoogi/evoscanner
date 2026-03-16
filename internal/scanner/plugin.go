@@ -36,6 +36,12 @@ type Plugin interface {
 type HttpClient interface {
 	// Do sends an HTTP request and returns the response.
 	Do(ctx context.Context, req *Request) (*Response, error)
+
+	// RecordLatency records response latency for adaptive thread adjustment.
+	RecordLatency(latencyMs int64)
+
+	// GetRecentLatency returns average of recent latencies.
+	GetRecentLatency() int64
 }
 
 // Request represents an HTTP request to be sent.

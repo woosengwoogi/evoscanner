@@ -137,6 +137,7 @@ type Summary struct {
 type ScanConfig struct {
 	TargetURL      string            `json:"target_url"`
 	Threads        int               `json:"threads"`
+	MaxThreads     int               `json:"max_threads"` // Maximum threads for adaptive mode
 	Timeout        time.Duration     `json:"timeout"`
 	MaxDepth       int               `json:"max_depth"`
 	MaxRequests    int               `json:"max_requests"`
@@ -153,6 +154,12 @@ type ScanConfig struct {
 	FollowRedirect bool              `json:"follow_redirect"`
 	VerifySSL      bool              `json:"verify_ssl"`
 	CallbackURL    string            `json:"callback_url,omitempty"` // OOB callback for Log4j etc.
+
+	// Adaptive thread settings
+	AdaptiveThreads bool          `json:"adaptive_threads"` // Enable adaptive thread adjustment
+	ProbeCount      int           `json:"probe_count"`      // Number of URLs to probe for latency measurement
+	SlowThreshold   time.Duration `json:"slow_threshold"`   // Threshold to consider a response as slow
+	NoHangMode      bool          `json:"no_hang_mode"`     // Skip endpoints that don't respond within timeout
 }
 
 // DefaultConfig returns a sane default configuration.

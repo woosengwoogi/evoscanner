@@ -24,6 +24,11 @@ type Engine struct {
 	// Progress tracking (written by workers, read by progress goroutine)
 	currentPlugin atomic.Value // string: currently running plugin ID
 	currentURL    atomic.Value // string: currently running URL
+
+	// Adaptive thread management
+	currentThreads atomic.Int32 // current thread count
+	avgLatencyMs   atomic.Int64 // average latency in milliseconds
+	timeoutCount   atomic.Int32 // number of timeouts/slow responses
 }
 
 // Stats tracks scan progress.
@@ -47,6 +52,32 @@ func NewEngine(config *types.ScanConfig, registry *Registry, client HttpClient) 
 // Scan runs all registered plugins against the target.
 func (e *Engine) Scan(ctx context.Context, target *types.Target) (*types.ScanResult, error) {
 	e.stats.StartTime = time.Now()
+
+	// Initialize adaptive thread management if enabled
+	if e.config.AdaptiveThreads {
+		e.initAdaptiveThreads()
+
+		// Probe phase: measure latency on first few endpoints
+		if len(target.Endpoints) > 0 {
+			probeCount := e.config.ProbeCount
+			if probeCount > len(target.Endpoints) {
+				probeCount = len(target.Endpoints)
+			}
+			log.Printf("[*] Probing %d endpoints for latency...", probeCount)
+			for i := 0; i < probeCount; i++ {
+				_, err := e.client.Do(ctx, &Request{
+					Method: "GET",
+					URL:    target.Endpoints[i].URL,
+				})
+				if err != nil {
+					e.recordTimeout()
+				}
+			}
+			currentThreads := e.getCurrentThreads()
+			avgLatency := e.client.GetRecentLatency()
+			log.Printf("[*] Probe complete: avg latency=%dms, threads=%d", avgLatency, currentThreads)
+		}
+	}
 
 	// Determine which plugins to run
 	var plugins []Plugin
@@ -93,8 +124,25 @@ func (e *Engine) Scan(ctx context.Context, target *types.Target) (*types.ScanRes
 	go e.progressLoop(progressDone)
 
 	// Run work items with bounded concurrency
-	sem := make(chan struct{}, e.config.Threads)
+	currentThreads := e.getCurrentThreads()
+	sem := make(chan struct{}, currentThreads)
 	var wg sync.WaitGroup
+
+	// Start adaptive thread adjustment goroutine
+	if e.config.AdaptiveThreads {
+		go func() {
+			ticker := time.NewTicker(2 * time.Second)
+			defer ticker.Stop()
+			for {
+				select {
+				case <-progressDone:
+					return
+				case <-ticker.C:
+					e.checkAndAdjustThreads()
+				}
+			}
+		}()
+	}
 
 	for _, item := range items {
 		select {
@@ -386,4 +434,69 @@ func setToSlice(s map[string]struct{}) []string {
 		result = append(result, k)
 	}
 	return result
+}
+
+// initAdaptiveThreads initializes adaptive thread management.
+func (e *Engine) initAdaptiveThreads() {
+	e.currentThreads.Store(int32(e.config.Threads))
+	e.avgLatencyMs.Store(0)
+	e.timeoutCount.Store(0)
+}
+
+// checkAndAdjustThreads checks recent latency and adjusts thread count.
+func (e *Engine) checkAndAdjustThreads() {
+	avgLatency := e.client.GetRecentLatency()
+	if avgLatency == 0 {
+		return
+	}
+
+	e.avgLatencyMs.Store(avgLatency)
+
+	current := e.currentThreads.Load()
+	maxThreads := int32(e.config.MaxThreads)
+	minThreads := int32(1)
+
+	slowThresholdMs := e.config.SlowThreshold.Milliseconds()
+
+	if avgLatency > slowThresholdMs {
+		newThreads := current - 1
+		if newThreads < minThreads {
+			newThreads = minThreads
+		}
+		if newThreads != current {
+			e.currentThreads.Store(newThreads)
+			log.Printf("[*] Slow response (avg: %dms > %dms), threads: %d -> %d",
+				avgLatency, slowThresholdMs, current, newThreads)
+		}
+	} else if avgLatency < 500 && current < maxThreads {
+		newThreads := current + 1
+		if newThreads > maxThreads {
+			newThreads = maxThreads
+		}
+		if newThreads != current {
+			e.currentThreads.Store(newThreads)
+			log.Printf("[*] Fast response (avg: %dms < 500ms), threads: %d -> %d",
+				avgLatency, current, newThreads)
+		}
+	}
+}
+
+// recordTimeout increments timeout count and reduces threads.
+func (e *Engine) recordTimeout() {
+	count := e.timeoutCount.Add(1)
+	newThreads := e.currentThreads.Add(-1)
+	if newThreads < 1 {
+		e.currentThreads.Store(1)
+	}
+	if count%3 == 0 {
+		log.Printf("[*] Timeout (#%d), threads reduced to %d", count, e.currentThreads.Load())
+	}
+}
+
+// getCurrentThreads returns the current thread count for adaptive mode.
+func (e *Engine) getCurrentThreads() int {
+	if e.config.AdaptiveThreads {
+		return int(e.currentThreads.Load())
+	}
+	return e.config.Threads
 }

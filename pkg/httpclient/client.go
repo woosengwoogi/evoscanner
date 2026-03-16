@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/evoscanner/evoscanner/internal/scanner"
@@ -21,6 +22,10 @@ type Client struct {
 	httpClient *http.Client
 	config     *types.ScanConfig
 	maxRetries int
+
+	// Latency tracking for adaptive thread adjustment
+	recentLatencies []int64
+	latencyMu       sync.Mutex
 }
 
 // New creates a new HTTP client from scan config.
@@ -63,8 +68,9 @@ func New(config *types.ScanConfig) *Client {
 			Transport:     transport,
 			CheckRedirect: redirectPolicy,
 		},
-		config:     config,
-		maxRetries: 2,
+		config:          config,
+		maxRetries:      2,
+		recentLatencies: make([]int64, 0, 20),
 	}
 }
 
@@ -75,6 +81,7 @@ func (c *Client) Do(ctx context.Context, req *scanner.Request) (*scanner.Respons
 	for attempt := 0; attempt <= c.maxRetries; attempt++ {
 		resp, err := c.doOnce(ctx, req)
 		if err == nil {
+			c.RecordLatency(resp.Latency)
 			return resp, nil
 		}
 		lastErr = err
@@ -170,4 +177,31 @@ func (c *Client) doOnce(ctx context.Context, req *scanner.Request) (*scanner.Res
 		RawResponse: rawResp,
 		Latency:     latency,
 	}, nil
+}
+
+// RecordLatency records a response latency for adaptive thread adjustment.
+func (c *Client) RecordLatency(latencyMs int64) {
+	c.latencyMu.Lock()
+	defer c.latencyMu.Unlock()
+
+	c.recentLatencies = append(c.recentLatencies, latencyMs)
+	if len(c.recentLatencies) > 20 {
+		c.recentLatencies = c.recentLatencies[1:]
+	}
+}
+
+// GetRecentLatency returns the average of recent latencies.
+func (c *Client) GetRecentLatency() int64 {
+	c.latencyMu.Lock()
+	defer c.latencyMu.Unlock()
+
+	if len(c.recentLatencies) == 0 {
+		return 0
+	}
+
+	var sum int64
+	for _, l := range c.recentLatencies {
+		sum += l
+	}
+	return sum / int64(len(c.recentLatencies))
 }

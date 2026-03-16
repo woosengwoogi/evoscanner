@@ -222,6 +222,11 @@ func (c *Crawler) crawlURL(ctx context.Context, rawURL string, parentURL string,
 		return
 	}
 
+	// Store latency for adaptive thread adjustment in scan phase
+	if resp != nil {
+		_ = resp.Latency
+	}
+
 	// Parse URL for parameter extraction
 	parsedURL, _ := url.Parse(normalized)
 	params := extractQueryParams(parsedURL)
