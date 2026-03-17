@@ -324,6 +324,12 @@ func checkOOBLog4j(ctx context.Context, target *types.Target, endpoint *types.En
 	log.Printf("[*] [OOB] Waiting 3s for DNS propagation...")
 	time.Sleep(3 * time.Second)
 
+	var detectedPayload string
+	for _, p := range log4jPayloads {
+		detectedPayload = p
+		break
+	}
+
 	// Check if DNS log received
 	log.Printf("[*] [OOB] Checking DNS log for: %s", subdomain)
 	hit, err := checkDNSLog(dnslogDomain, target.DNSLogAPI, subdomain)
@@ -331,24 +337,36 @@ func checkOOBLog4j(ctx context.Context, target *types.Target, endpoint *types.En
 		log.Printf("[WARN] [OOB] DNS log check failed: %v", err)
 	}
 	if hit {
-		log.Printf("[!] [OOB] DNS callback CONFIRMED! Log4Shell vulnerability detected at %s", endpoint.URL)
+		log.Printf("[!] [CRITICAL] Log4Shell (CVE-2021-44228) CONFIRMED!")
+		log.Printf("    URL: %s", endpoint.URL)
+		log.Printf("    Payload: %s", detectedPayload)
+		log.Printf("    DNS Callback: %s", fullDomain)
+		log.Printf("    Method: %s", "GET")
+		log.Printf("    Headers: User-Agent, X-Forwarded-For, Referer")
+
 		findings = append(findings, types.Finding{
 			ID:          fmt.Sprintf("oob-log4j-%d", time.Now().UnixNano()),
 			PluginID:    "known-cve",
 			Name:        "Log4Shell (CVE-2021-44228) - OOB Detection",
-			Description: "DNS callback received from JNDI lookup, confirming Log4j vulnerability",
+			Description: fmt.Sprintf("DNS callback received from JNDI lookup. Target is vulnerable to Log4Shell. Payload sent via headers: User-Agent, X-Forwarded-For, Referer. DNS callback to: %s", fullDomain),
 			Severity:    types.SeverityCritical,
 			Confidence:  0.95,
 			URL:         endpoint.URL,
 			Method:      "GET",
-			Evidence:    "DNS callback to: " + fullDomain,
+			Parameter:   "Headers (User-Agent, X-Forwarded-For, Referer)",
+			Payload:     detectedPayload,
+			Evidence:    fmt.Sprintf("DNS callback to: %s", fullDomain),
 			CWE:         []string{"CWE-917", "CWE-502"},
 			CVE:         []string{"CVE-2021-44228"},
+			Remediation: "Upgrade Log4j to 2.17.0+ or newer, or remove JndiLookup class from classpath",
 			References: []string{
 				"https://nvd.nist.gov/vuln/detail/CVE-2021-44228",
+				"https://logging.apache.org/log4j/2.x/security.html",
 			},
 			Timestamp: time.Now(),
 		})
+	} else {
+		log.Printf("[*] [OOB] No DNS callback received for %s", endpoint.URL)
 	}
 
 	return findings
