@@ -29,11 +29,13 @@ const (
 
 // Target represents a scan target with its discovered endpoints.
 type Target struct {
-	BaseURL    string            `json:"base_url"`
-	Endpoints  []Endpoint        `json:"endpoints,omitempty"`
-	Headers    map[string]string `json:"headers,omitempty"`
-	Cookies    []*Cookie         `json:"cookies,omitempty"`
-	Technology []string          `json:"technology,omitempty"`
+	BaseURL      string            `json:"base_url"`
+	Endpoints    []Endpoint        `json:"endpoints,omitempty"`
+	Headers      map[string]string `json:"headers,omitempty"`
+	Cookies      []*Cookie         `json:"cookies,omitempty"`
+	Technology   []string          `json:"technology,omitempty"`
+	DNSLogDomain string            `json:"dnslog_domain,omitempty"`
+	DNSLogAPI    string            `json:"dnslog_api,omitempty"`
 }
 
 // Endpoint represents a discovered URL with its parameters.
@@ -201,6 +203,11 @@ type ScanConfig struct {
 	CheckpointPath  string        `json:"checkpoint_path"`  // Path to save/load checkpoint
 	MaxRetries      int           `json:"max_retries"`      // Maximum retry attempts
 	FastMode        bool          `json:"fast_mode"`        // Fast mode optimizations
+
+	// DNS log (OOB) settings for Log4j, etc.
+	DNSLogDomain  string `json:"dnslog_domain"`  // DNS log domain (e.g., dnslog.cn, ceye.io)
+	DNSLogAPI     string `json:"dnslog_api"`     // DNS log API key
+	DNSLogEnabled bool   `json:"dnslog_enabled"` // Enable OOB detection
 }
 
 // DefaultConfig returns a sane default configuration.

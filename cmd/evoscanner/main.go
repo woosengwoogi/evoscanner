@@ -136,6 +136,11 @@ func cmdScan(args []string) {
 	// OOB callback
 	callbackURL := fs.String("callback-url", "", "OOB callback URL for Log4j/SSRF detection")
 
+	// DNS log (OOB) settings
+	dnslogDomain := fs.String("dnslog-domain", "", "DNS log domain for OOB detection (e.g., dnslog.cn, ceye.io)")
+	dnslogAPI := fs.String("dnslog-api", "", "DNS log API key")
+	dnslogEnabled := fs.Bool("dnslog", false, "Enable DNS log (OOB) detection for Log4j, etc.")
+
 	fs.Usage = func() {
 		fmt.Println("Usage: evoscanner scan [options]")
 		fmt.Println()
@@ -241,6 +246,9 @@ func cmdScan(args []string) {
 		CheckpointPath:  checkpointPath,
 		MaxRetries:      *maxRetries,
 		FastMode:        *fastMode,
+		DNSLogDomain:    *dnslogDomain,
+		DNSLogAPI:       *dnslogAPI,
+		DNSLogEnabled:   *dnslogEnabled,
 	}
 
 	// Load checkpoint if resuming
@@ -313,8 +321,10 @@ func cmdScan(args []string) {
 
 	if *noCrawl {
 		scanTarget = &types.Target{
-			BaseURL: targetURL,
-			Headers: config.Headers,
+			BaseURL:      targetURL,
+			Headers:      config.Headers,
+			DNSLogDomain: config.DNSLogDomain,
+			DNSLogAPI:    config.DNSLogAPI,
 		}
 	} else {
 		fmt.Println("[*] Crawling target...")
@@ -326,9 +336,14 @@ func cmdScan(args []string) {
 			log.Printf("[WARN] Crawl error: %v", err)
 			// Fallback to base target only
 			scanTarget = &types.Target{
-				BaseURL: targetURL,
-				Headers: config.Headers,
+				BaseURL:      targetURL,
+				Headers:      config.Headers,
+				DNSLogDomain: config.DNSLogDomain,
+				DNSLogAPI:    config.DNSLogAPI,
 			}
+		} else {
+			scanTarget.DNSLogDomain = config.DNSLogDomain
+			scanTarget.DNSLogAPI = config.DNSLogAPI
 		}
 
 		fmt.Printf("[*] Discovered %d endpoints\n", len(scanTarget.Endpoints))

