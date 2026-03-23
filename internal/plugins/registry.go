@@ -10,6 +10,7 @@ import (
 	"github.com/evoscanner/evoscanner/internal/plugins/session"
 	"github.com/evoscanner/evoscanner/internal/plugins/sqli"
 	"github.com/evoscanner/evoscanner/internal/plugins/traversal"
+	"github.com/evoscanner/evoscanner/internal/plugins/upload"
 	"github.com/evoscanner/evoscanner/internal/plugins/xss"
 	"github.com/evoscanner/evoscanner/internal/scanner"
 )
@@ -25,4 +26,5 @@ func RegisterAll(registry *scanner.Registry) {
 	registry.Register(&bruteforce.Plugin{})
 	registry.Register(&cve.Plugin{})
 	registry.Register(&idor.Plugin{})
+	registry.Register(&upload.Plugin{})
 }

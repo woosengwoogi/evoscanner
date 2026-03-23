@@ -185,13 +185,24 @@ func (e *Engine) Scan(ctx context.Context, target *types.Target, loadedState *ty
 			defer wg.Done()
 			defer func() { <-sem }()
 
+			// Check if context cancelled
+			select {
+			case <-ctx.Done():
+				return
+			default:
+			}
+
 			// Update current work info (lock-free, read by progress goroutine)
 			e.currentPlugin.Store(wi.plugin.ID())
 			e.currentURL.Store(wi.endpoint.URL)
 
 			// Apply delay between requests
 			if e.config.DelayMs > 0 {
-				time.Sleep(time.Duration(e.config.DelayMs) * time.Millisecond)
+				select {
+				case <-ctx.Done():
+					return
+				case <-time.After(time.Duration(e.config.DelayMs) * time.Millisecond):
+				}
 			}
 
 			findings, err := wi.plugin.Check(ctx, target, wi.endpoint, e.client)

@@ -53,6 +53,10 @@ func (p *Plugin) Check(ctx context.Context, target *types.Target, endpoint *type
 	findings := make([]types.Finding, 0)
 
 	callback := discoverCallbackURL(target)
+	// If DNSLogDomain is set, use it for callback
+	if target.DNSLogDomain != "" {
+		callback = target.DNSLogDomain
+	}
 	log4jPayloads := buildLog4jPayloads(callback)
 	log4jHeaderNames := []string{"User-Agent", "X-Forwarded-For", "Referer", "X-Api-Version", "Accept-Language"}
 
@@ -107,11 +111,11 @@ func (p *Plugin) Check(ctx context.Context, target *types.Target, endpoint *type
 		})
 	}
 
-	// OOB DNS log check for Log4j
-	if target.DNSLogDomain != "" {
-		oobFindings := checkOOBLog4j(ctx, target, endpoint, client)
-		findings = append(findings, oobFindings...)
-	}
+	// OOB DNS log check disabled - user will manually check on dig.pm
+	// if target.DNSLogDomain != "" {
+	// 	oobFindings := checkOOBLog4j(ctx, target, endpoint, client)
+	// 	findings = append(findings, oobFindings...)
+	// }
 
 	strutsHeaders := copyHeaders(headers)
 	strutsPayload := "%{(#test='multipart/form-data')}"
@@ -317,7 +321,11 @@ func checkOOBLog4j(ctx context.Context, target *types.Target, endpoint *types.En
 			continue
 		}
 		_ = resp
-		log.Printf("[*] [OOB] Sent payload: %s", payload[:50]+"...")
+		payloadLog := payload
+		if len(payload) > 50 {
+			payloadLog = payload[:50] + "..."
+		}
+		log.Printf("[*] [OOB] Sent payload: %s", payloadLog)
 	}
 
 	// Wait for DNS propagation
