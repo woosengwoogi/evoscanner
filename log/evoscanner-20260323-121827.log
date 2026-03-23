@@ -1,6 +1,0 @@
-2026/03/23 12:18:38 engine.go:76: [*] Probing 5 endpoints for latency...
-2026/03/23 12:18:40 engine.go:88: [*] Probe complete: avg latency=20ms, threads=10
-2026/03/23 12:18:42 engine.go:516: [*] Fast response (avg: 50ms < 500ms), threads: 10 -> 11
-2026/03/23 12:18:44 engine.go:516: [*] Fast response (avg: 46ms < 500ms), threads: 11 -> 12
-2026/03/23 12:18:46 engine.go:516: [*] Fast response (avg: 55ms < 500ms), threads: 12 -> 13
-2026/03/23 12:18:48 engine.go:516: [*] Fast response (avg: 55ms < 500ms), threads: 13 -> 14

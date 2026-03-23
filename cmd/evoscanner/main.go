@@ -96,17 +96,22 @@ func cmdScan(args []string) {
 	// Scan behavior
 	threads := fs.Int("threads", 10, "Number of concurrent threads")
 	maxThreads := fs.Int("max-threads", 100, "Maximum threads for adaptive mode")
-	adaptive := fs.Bool("adaptive-threads", false, "Enable adaptive thread adjustment based on response time")
+	adaptive := fs.Bool("adaptive-threads", true, "Enable adaptive thread adjustment based on response time (default: enabled)")
 	probeCount := fs.Int("probe-count", 5, "Number of URLs to probe for latency measurement")
-	slowThreshold := fs.Duration("slow-threshold", 5*time.Second, "Threshold to consider a response as slow")
+	slowThreshold := fs.Duration("slow-threshold", 1*time.Second, "Threshold to consider a response as slow")
 	noHang := fs.Bool("no-hang", false, "Skip endpoints that don't respond within timeout")
 	timeout := fs.Duration("timeout", 30*time.Second, "HTTP request timeout")
 	maxDepth := fs.Int("depth", 3, "Maximum crawl depth")
 	maxRequests := fs.Int("max-requests", 1000, "Maximum number of HTTP requests")
-	delay := fs.Int("delay", 100, "Delay between requests in milliseconds (0=disable)")
+	delay := fs.Int("delay", 0, "Delay between requests in ms (default: adaptive based on response time)")
 	maxRetries := fs.Int("max-retries", 2, "Maximum retry attempts for failed requests")
 	fastMode := fs.Bool("fast", false, "Fast mode: disable delay, reduce retries, increase connections")
 	noCrawl := fs.Bool("no-crawl", false, "Skip crawling, scan target URL only")
+	crawlTimeout := fs.Duration("crawl-timeout", 0, "Maximum time for crawling (0=unlimited, e.g., 5m)")
+	crawlWorkers := fs.Int("crawl-workers", 1, "Number of parallel workers for crawling")
+	crawlAdaptive := fs.Bool("crawl-adaptive", true, "Enable adaptive delay based on response time (default: enabled)")
+	crawlDelayMin := fs.Int("crawl-delay-min", 0, "Minimum delay between crawl requests in ms (default: 0)")
+	crawlDelayMax := fs.Int("crawl-delay-max", 1000, "Maximum delay between crawl requests in ms (default: 1000)")
 
 	// HTTP options
 	userAgent := fs.String("user-agent", "EvoScanner/1.0", "Custom User-Agent string")
@@ -249,6 +254,11 @@ func cmdScan(args []string) {
 		DNSLogDomain:    *dnslogDomain,
 		DNSLogAPI:       *dnslogAPI,
 		DNSLogEnabled:   *dnslogEnabled,
+		CrawlTimeout:    *crawlTimeout,
+		CrawlWorkers:    *crawlWorkers,
+		CrawlAdaptive:   *crawlAdaptive,
+		CrawlDelayMin:   *crawlDelayMin,
+		CrawlDelayMax:   *crawlDelayMax,
 	}
 
 	// Load checkpoint if resuming
@@ -322,6 +332,15 @@ func cmdScan(args []string) {
 	if *noCrawl {
 		scanTarget = &types.Target{
 			BaseURL:      targetURL,
+			Headers:      config.Headers,
+			DNSLogDomain: config.DNSLogDomain,
+			DNSLogAPI:    config.DNSLogAPI,
+		}
+	} else if loadedState != nil && len(loadedState.Endpoints) > 0 {
+		fmt.Printf("[*] Using %d endpoints from checkpoint (skipping crawl)\n", len(loadedState.Endpoints))
+		scanTarget = &types.Target{
+			BaseURL:      targetURL,
+			Endpoints:    loadedState.Endpoints,
 			Headers:      config.Headers,
 			DNSLogDomain: config.DNSLogDomain,
 			DNSLogAPI:    config.DNSLogAPI,

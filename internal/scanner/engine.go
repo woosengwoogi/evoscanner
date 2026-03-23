@@ -14,12 +14,13 @@ import (
 
 // Engine orchestrates the scanning process.
 type Engine struct {
-	config   *types.ScanConfig
-	registry *Registry
-	client   HttpClient
-	mu       sync.Mutex
-	findings []types.Finding
-	stats    Stats
+	config    *types.ScanConfig
+	registry  *Registry
+	client    HttpClient
+	mu        sync.Mutex
+	findings  []types.Finding
+	endpoints []types.Endpoint
+	stats     Stats
 
 	// Progress tracking (written by workers, read by progress goroutine)
 	currentPlugin atomic.Value // string: currently running plugin ID
@@ -29,6 +30,8 @@ type Engine struct {
 	currentThreads atomic.Int32 // current thread count
 	avgLatencyMs   atomic.Int64 // average latency in milliseconds
 	timeoutCount   atomic.Int32 // number of timeouts/slow responses
+
+	currentDelay int
 }
 
 // Stats tracks scan progress.
@@ -42,16 +45,18 @@ type Stats struct {
 // NewEngine creates a new scan engine.
 func NewEngine(config *types.ScanConfig, registry *Registry, client HttpClient) *Engine {
 	return &Engine{
-		config:   config,
-		registry: registry,
-		client:   client,
-		findings: make([]types.Finding, 0),
+		config:    config,
+		registry:  registry,
+		client:    client,
+		findings:  make([]types.Finding, 0),
+		endpoints: make([]types.Endpoint, 0),
 	}
 }
 
 // Scan runs all registered plugins against the target.
 func (e *Engine) Scan(ctx context.Context, target *types.Target, loadedState *types.ScanState) (*types.ScanResult, error) {
 	e.stats.StartTime = time.Now()
+	e.currentDelay = 0
 
 	// Load checkpoint if resuming
 	if loadedState != nil {
@@ -59,8 +64,16 @@ func (e *Engine) Scan(ctx context.Context, target *types.Target, loadedState *ty
 		for _, f := range loadedState.Findings {
 			e.findings = append(e.findings, f)
 		}
+		for _, ep := range loadedState.Endpoints {
+			e.endpoints = append(e.endpoints, ep)
+		}
 		e.stats.TotalFindings = int64(len(e.findings))
-		log.Printf("[*] Resumed with %d completed checks, %d findings", loadedState.CompletedChecks, len(e.findings))
+		log.Printf("[*] Resumed with %d completed checks, %d findings, %d endpoints", loadedState.CompletedChecks, len(e.findings), len(e.endpoints))
+	}
+
+	// Store endpoints from target (crawled or loaded from checkpoint) for checkpoint saving
+	if len(target.Endpoints) > 0 && len(e.endpoints) == 0 {
+		e.endpoints = append(e.endpoints, target.Endpoints...)
 	}
 
 	// Initialize adaptive thread management if enabled
@@ -196,12 +209,38 @@ func (e *Engine) Scan(ctx context.Context, target *types.Target, loadedState *ty
 			e.currentPlugin.Store(wi.plugin.ID())
 			e.currentURL.Store(wi.endpoint.URL)
 
-			// Apply delay between requests
-			if e.config.DelayMs > 0 {
-				select {
-				case <-ctx.Done():
-					return
-				case <-time.After(time.Duration(e.config.DelayMs) * time.Millisecond):
+			latency := e.client.GetRecentLatency()
+			if latency > 0 || e.config.DelayMs > 0 {
+				e.mu.Lock()
+				if latency > 5000 {
+					e.currentDelay += 200
+				} else if latency > 2000 {
+					e.currentDelay += 100
+				} else if latency > 1000 {
+					e.currentDelay += 50
+				} else if latency < 500 && e.currentDelay > 0 {
+					e.currentDelay -= 25
+				}
+
+				maxDelay := e.config.DelayMs
+				if maxDelay <= 0 {
+					maxDelay = 1000
+				}
+				if e.currentDelay < 0 {
+					e.currentDelay = 0
+				}
+				if e.currentDelay > maxDelay {
+					e.currentDelay = maxDelay
+				}
+				delayToUse := e.currentDelay
+				e.mu.Unlock()
+
+				if delayToUse > 0 {
+					select {
+					case <-ctx.Done():
+						return
+					case <-time.After(time.Duration(delayToUse) * time.Millisecond):
+					}
 				}
 			}
 
@@ -550,6 +589,7 @@ func (e *Engine) saveCheckpoint(targetURL string) {
 		CompletedChecks: atomic.LoadInt64(&e.stats.CompletedChecks),
 		TotalChecks:     atomic.LoadInt64(&e.stats.TotalChecks),
 		Findings:        e.findings,
+		Endpoints:       e.endpoints,
 		StartTime:       e.stats.StartTime,
 		CheckpointTime:  time.Now(),
 	}
@@ -557,6 +597,6 @@ func (e *Engine) saveCheckpoint(targetURL string) {
 	if err := types.SaveCheckpoint(state, e.config.CheckpointPath); err != nil {
 		log.Printf("[WARN] Failed to save checkpoint: %v", err)
 	} else {
-		log.Printf("[*] Checkpoint saved: %d/%d checks", state.CompletedChecks, state.TotalChecks)
+		log.Printf("[*] Checkpoint saved: %d/%d checks, %d endpoints", state.CompletedChecks, state.TotalChecks, len(state.Endpoints))
 	}
 }

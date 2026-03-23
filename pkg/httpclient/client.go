@@ -121,6 +121,8 @@ func (c *Client) Do(ctx context.Context, req *scanner.Request) (*scanner.Respons
 		}
 	}
 
+	c.RecordLatency(c.config.Timeout.Milliseconds())
+
 	return nil, fmt.Errorf("after %d retries: %w", c.maxRetries, lastErr)
 }
 

@@ -5,8 +5,10 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/evoscanner/evoscanner/internal/scanner"
+	"github.com/evoscanner/evoscanner/pkg/types"
 )
 
 type DiscoveredPath struct {
@@ -840,7 +842,7 @@ var commonPaths = []string{
 	"/sec/ram/EgovAuthorList.do",
 }
 
-func BruteforceDirectories(ctx context.Context, baseURL string, client scanner.HttpClient, threads int) []DiscoveredPath {
+func BruteforceDirectories(ctx context.Context, baseURL string, client scanner.HttpClient, threads int, config *types.ScanConfig) []DiscoveredPath {
 	if ctx == nil || client == nil {
 		return nil
 	}
@@ -859,6 +861,19 @@ func BruteforceDirectories(ctx context.Context, baseURL string, client scanner.H
 	results := make([]DiscoveredPath, 0, len(commonPaths))
 	var mu sync.Mutex
 	var wg sync.WaitGroup
+	var currentDelay int
+
+	delayMin := 0
+	delayMax := 1000
+	if config != nil {
+		if config.CrawlDelayMin > 0 {
+			delayMin = config.CrawlDelayMin
+		}
+		if config.CrawlDelayMax > 0 {
+			delayMax = config.CrawlDelayMax
+		}
+		currentDelay = delayMin
+	}
 
 	sem := make(chan struct{}, threads)
 
@@ -888,6 +903,31 @@ launchLoop:
 				resp, err := client.Do(ctx, req)
 				if err != nil || resp == nil {
 					return
+				}
+
+				latencyMs := resp.Latency
+				if latencyMs > 0 {
+					mu.Lock()
+					if latencyMs > 5000 {
+						currentDelay += 200
+					} else if latencyMs > 2000 {
+						currentDelay += 100
+					} else if latencyMs > 1000 {
+						currentDelay += 50
+					} else if latencyMs < 500 && currentDelay > delayMin {
+						currentDelay -= 25
+					}
+					if currentDelay < delayMin {
+						currentDelay = delayMin
+					}
+					if currentDelay > delayMax {
+						currentDelay = delayMax
+					}
+					mu.Unlock()
+
+					if currentDelay > 0 {
+						time.Sleep(time.Duration(currentDelay) * time.Millisecond)
+					}
 				}
 
 				size := len(resp.Body)

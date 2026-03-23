@@ -134,6 +134,7 @@ type ScanState struct {
 	CompletedChecks int64           `json:"completed_checks"`
 	TotalChecks     int64           `json:"total_checks"`
 	Findings        []Finding       `json:"findings"`
+	Endpoints       []Endpoint      `json:"endpoints,omitempty"`
 	StartTime       time.Time       `json:"start_time"`
 	ProcessedURLs   map[string]bool `json:"processed_urls"`
 	CheckpointTime  time.Time       `json:"checkpoint_time"`
@@ -208,6 +209,13 @@ type ScanConfig struct {
 	DNSLogDomain  string `json:"dnslog_domain"`  // DNS log domain (e.g., dnslog.cn, ceye.io)
 	DNSLogAPI     string `json:"dnslog_api"`     // DNS log API key
 	DNSLogEnabled bool   `json:"dnslog_enabled"` // Enable OOB detection
+
+	CrawlTimeout time.Duration `json:"crawl_timeout"`
+	CrawlWorkers int           `json:"crawl_workers"`
+
+	CrawlAdaptive bool `json:"crawl_adaptive"`
+	CrawlDelayMin int  `json:"crawl_delay_min"`
+	CrawlDelayMax int  `json:"crawl_delay_max"`
 }
 
 // DefaultConfig returns a sane default configuration.

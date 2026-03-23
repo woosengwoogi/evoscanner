@@ -9,6 +9,7 @@ import (
 	"regexp"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/evoscanner/evoscanner/internal/scanner"
 	"github.com/evoscanner/evoscanner/pkg/types"
@@ -25,20 +26,42 @@ var (
 
 // Crawler discovers endpoints on a target.
 type Crawler struct {
-	client    scanner.HttpClient
-	config    *types.ScanConfig
-	visited   map[string]bool
-	mu        sync.Mutex
-	baseURL   *url.URL
-	endpoints []types.Endpoint
+	client       scanner.HttpClient
+	config       *types.ScanConfig
+	visited      map[string]bool
+	mu           sync.Mutex
+	baseURL      *url.URL
+	endpoints    []types.Endpoint
+	queue        []string
+	workerCount  int
+	startTime    time.Time
+	currentDelay int
+	avgLatency   int64
 }
 
-// New creates a new crawler.
 func New(client scanner.HttpClient, config *types.ScanConfig) *Crawler {
+	workers := config.CrawlWorkers
+	if workers < 1 {
+		workers = 1
+	}
+	delayMax := config.CrawlDelayMax
+	if delayMax < 0 {
+		delayMax = 1000
+	}
+	delayMin := config.CrawlDelayMin
+	if delayMin < 0 {
+		delayMin = 0
+	}
+	if delayMin > delayMax {
+		delayMin = delayMax
+	}
 	return &Crawler{
-		client:  client,
-		config:  config,
-		visited: make(map[string]bool),
+		client:       client,
+		config:       config,
+		visited:      make(map[string]bool),
+		workerCount:  workers,
+		currentDelay: delayMin,
+		avgLatency:   0,
 	}
 }
 
@@ -57,13 +80,27 @@ func (c *Crawler) Crawl(ctx context.Context, targetURL string) (*types.Target, e
 		Headers: make(map[string]string),
 	}
 
+	c.startTime = time.Now()
+
+	crawlCtx := ctx
+	if c.config.CrawlTimeout > 0 {
+		var cancel context.CancelFunc
+		crawlCtx, cancel = context.WithTimeout(ctx, c.config.CrawlTimeout)
+		defer cancel()
+		go func() {
+			<-crawlCtx.Done()
+			if crawlCtx.Err() == context.DeadlineExceeded {
+				log.Printf("[*] Crawl timeout reached (%v), finishing...", c.config.CrawlTimeout)
+			}
+		}()
+	}
+
 	// Phase 1: Recursive HTML crawl
-	c.crawlURL(ctx, targetURL, "", 0)
+	c.crawlURL(crawlCtx, targetURL, "", 0)
 
 	htmlCount := len(c.endpoints)
-	if c.config.Verbose {
-		log.Printf("[*] HTML crawl: %d unique URLs, %d endpoints", len(c.visited), htmlCount)
-	}
+	log.Printf("[*] Crawl complete: %d URLs, %d endpoints (%.1fs)",
+		len(c.visited), htmlCount, time.Since(c.startTime).Seconds())
 
 	// Phase 2: robots.txt / sitemap.xml (single fetch)
 	if ctx.Err() == nil {
@@ -104,11 +141,24 @@ func (c *Crawler) Crawl(ctx context.Context, targetURL string) (*types.Target, e
 			}
 		}
 
+		if len(jsURLs) == 0 {
+			return target, nil
+		}
+
+		log.Printf("[*] Parsing %d JS files for endpoints...", len(jsURLs))
+
 		added := 0
 		for _, jsURL := range jsURLs {
 			if ctx.Err() != nil {
 				break
 			}
+
+			select {
+			case <-ctx.Done():
+				break
+			default:
+			}
+
 			resp, err := c.client.Do(ctx, &scanner.Request{
 				Method: "GET",
 				URL:    jsURL,
@@ -116,6 +166,12 @@ func (c *Crawler) Crawl(ctx context.Context, targetURL string) (*types.Target, e
 			if err != nil || resp == nil || resp.StatusCode != 200 {
 				continue
 			}
+
+			if len(resp.Body) > 2_000_000 {
+				log.Printf("[WARN] Skipping large JS file (%d MB): %s", len(resp.Body)/1_000_000, jsURL)
+				continue
+			}
+
 			extracted := ExtractJSEndpoints(targetURL, resp.Body)
 			for _, u := range extracted {
 				norm := c.normalizeURL(u)
@@ -138,14 +194,12 @@ func (c *Crawler) Crawl(ctx context.Context, targetURL string) (*types.Target, e
 				c.mu.Unlock()
 			}
 		}
-		if c.config.Verbose && added > 0 {
-			log.Printf("[*] JS parsing: +%d endpoints from %d JS files", added, len(jsURLs))
-		}
+		log.Printf("[*] JS parsing: +%d endpoints from %d JS files", added, len(jsURLs))
 	}
 
 	// Phase 4: Directory bruteforce
 	if ctx.Err() == nil {
-		discovered := BruteforceDirectories(ctx, targetURL, c.client, c.config.Threads)
+		discovered := BruteforceDirectories(ctx, targetURL, c.client, c.config.Threads, c.config)
 		added := 0
 		for _, dp := range discovered {
 			norm := c.normalizeURL(dp.URL)
@@ -222,9 +276,37 @@ func (c *Crawler) crawlURL(ctx context.Context, rawURL string, parentURL string,
 		return
 	}
 
-	// Store latency for adaptive thread adjustment in scan phase
-	if resp != nil {
-		_ = resp.Latency
+	if c.config.CrawlAdaptive && resp != nil && resp.Latency > 0 {
+		latencyMs := resp.Latency
+
+		c.mu.Lock()
+		oldDelay := c.currentDelay
+
+		if latencyMs > 5000 {
+			c.currentDelay += 200
+		} else if latencyMs > 2000 {
+			c.currentDelay += 100
+		} else if latencyMs > 1000 {
+			c.currentDelay += 50
+		} else if latencyMs < 500 && c.currentDelay > 0 {
+			c.currentDelay -= 25
+		}
+
+		if c.currentDelay < c.config.CrawlDelayMin {
+			c.currentDelay = c.config.CrawlDelayMin
+		}
+		if c.config.CrawlDelayMax > 0 && c.currentDelay > c.config.CrawlDelayMax {
+			c.currentDelay = c.config.CrawlDelayMax
+		}
+
+		if oldDelay != c.currentDelay && c.config.Verbose {
+			log.Printf("[*] Adaptive crawl delay: %dms (latency: %dms)", c.currentDelay, latencyMs)
+		}
+		c.mu.Unlock()
+
+		if c.currentDelay > 0 {
+			time.Sleep(time.Duration(c.currentDelay) * time.Millisecond)
+		}
 	}
 
 	// Parse URL for parameter extraction
