@@ -338,9 +338,17 @@ func cmdScan(args []string) {
 		}
 	} else if loadedState != nil && len(loadedState.Endpoints) > 0 {
 		fmt.Printf("[*] Using %d endpoints from checkpoint (skipping crawl)\n", len(loadedState.Endpoints))
+		// Convert lightweight EndpointInfo back to full Endpoint
+		endpoints := make([]types.Endpoint, len(loadedState.Endpoints))
+		for i, ep := range loadedState.Endpoints {
+			endpoints[i] = types.Endpoint{
+				URL:    ep.URL,
+				Method: ep.Method,
+			}
+		}
 		scanTarget = &types.Target{
 			BaseURL:      targetURL,
-			Endpoints:    loadedState.Endpoints,
+			Endpoints:    endpoints,
 			Headers:      config.Headers,
 			DNSLogDomain: config.DNSLogDomain,
 			DNSLogAPI:    config.DNSLogAPI,

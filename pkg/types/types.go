@@ -128,13 +128,20 @@ type ScanResult struct {
 	Summary   Summary   `json:"summary"`
 }
 
+// EndpointInfo is a lightweight endpoint representation for checkpoint storage.
+// Only stores URL and Method - enough to resume scanning without re-crawling.
+type EndpointInfo struct {
+	URL    string `json:"url"`
+	Method string `json:"method"`
+}
+
 // ScanState represents the current state of a scan for resumption.
 type ScanState struct {
 	TargetURL       string          `json:"target_url"`
 	CompletedChecks int64           `json:"completed_checks"`
 	TotalChecks     int64           `json:"total_checks"`
 	Findings        []Finding       `json:"findings"`
-	Endpoints       []Endpoint      `json:"endpoints,omitempty"`
+	Endpoints       []EndpointInfo  `json:"endpoints,omitempty"`
 	StartTime       time.Time       `json:"start_time"`
 	ProcessedURLs   map[string]bool `json:"processed_urls"`
 	CheckpointTime  time.Time       `json:"checkpoint_time"`

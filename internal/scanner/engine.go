@@ -64,8 +64,12 @@ func (e *Engine) Scan(ctx context.Context, target *types.Target, loadedState *ty
 		for _, f := range loadedState.Findings {
 			e.findings = append(e.findings, f)
 		}
+		// Convert EndpointInfo (checkpoint) back to Endpoint for engine use
 		for _, ep := range loadedState.Endpoints {
-			e.endpoints = append(e.endpoints, ep)
+			e.endpoints = append(e.endpoints, types.Endpoint{
+				URL:    ep.URL,
+				Method: ep.Method,
+			})
 		}
 		e.stats.TotalFindings = int64(len(e.findings))
 		log.Printf("[*] Resumed with %d completed checks, %d findings, %d endpoints", loadedState.CompletedChecks, len(e.findings), len(e.endpoints))
@@ -584,12 +588,21 @@ func (e *Engine) saveCheckpoint(targetURL string) {
 		return
 	}
 
+	// Convert full Endpoints to lightweight EndpointInfo for smaller checkpoint
+	endpointInfos := make([]types.EndpointInfo, len(e.endpoints))
+	for i, ep := range e.endpoints {
+		endpointInfos[i] = types.EndpointInfo{
+			URL:    ep.URL,
+			Method: ep.Method,
+		}
+	}
+
 	state := &types.ScanState{
 		TargetURL:       targetURL,
 		CompletedChecks: atomic.LoadInt64(&e.stats.CompletedChecks),
 		TotalChecks:     atomic.LoadInt64(&e.stats.TotalChecks),
 		Findings:        e.findings,
-		Endpoints:       e.endpoints,
+		Endpoints:       endpointInfos,
 		StartTime:       e.stats.StartTime,
 		CheckpointTime:  time.Now(),
 	}

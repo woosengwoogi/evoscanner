@@ -1,0 +1,7 @@
+2026/03/23 16:36:59 crawler.go:102: [*] Crawl complete: 41 URLs, 78 endpoints (7.0s)
+2026/03/23 16:37:21 engine.go:555: [*] Fast response (avg: 167ms < 500ms), threads: 10 -> 11
+2026/03/23 16:37:23 engine.go:555: [*] Fast response (avg: 195ms < 500ms), threads: 11 -> 12
+2026/03/23 16:37:25 engine.go:555: [*] Fast response (avg: 203ms < 500ms), threads: 12 -> 13
+2026/03/23 16:37:27 engine.go:555: [*] Fast response (avg: 188ms < 500ms), threads: 13 -> 14
+2026/03/23 16:37:29 engine.go:555: [*] Fast response (avg: 172ms < 500ms), threads: 14 -> 15
+2026/03/23 16:37:31 engine.go:555: [*] Fast response (avg: 164ms < 500ms), threads: 15 -> 16
