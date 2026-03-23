@@ -78,6 +78,57 @@ func (p *Plugin) Check(ctx context.Context, target *types.Target, endpoint *type
 		{path: "/web.config", kind: "config-file"},
 		{path: "/.git/config", kind: "config-file"},
 		{path: "/.svn/entries", kind: "config-file"},
+		{path: "/admin", kind: "admin-page"},
+		{path: "/admin/", kind: "admin-page"},
+		{path: "/administrator", kind: "admin-page"},
+		{path: "/administrator/", kind: "admin-page"},
+		{path: "/wp-admin", kind: "admin-page"},
+		{path: "/wp-admin/", kind: "admin-page"},
+		{path: "/login", kind: "admin-page"},
+		{path: "/login/", kind: "admin-page"},
+		{path: "/admin/login", kind: "admin-page"},
+		{path: "/admin/login/", kind: "admin-page"},
+		{path: "/backend", kind: "admin-page"},
+		{path: "/backend/", kind: "admin-page"},
+		{path: "/control", kind: "admin-page"},
+		{path: "/control/", kind: "admin-page"},
+		{path: "/manage", kind: "admin-page"},
+		{path: "/manage/", kind: "admin-page"},
+		{path: "/cms", kind: "admin-page"},
+		{path: "/cms/", kind: "admin-page"},
+		{path: "/console", kind: "admin-page"},
+		{path: "/admin/console", kind: "admin-page"},
+		{path: "/VERSION", kind: "version-file"},
+		{path: "/version", kind: "version-file"},
+		{path: "/readme", kind: "version-file"},
+		{path: "/readme.html", kind: "version-file"},
+		{path: "/readme.txt", kind: "version-file"},
+		{path: "/README", kind: "version-file"},
+		{path: "/README.html", kind: "version-file"},
+		{path: "/README.txt", kind: "version-file"},
+		{path: "/CHANGELOG", kind: "version-file"},
+		{path: "/CHANGELOG.txt", kind: "version-file"},
+		{path: "/changelog", kind: "version-file"},
+		{path: "/ChangeLog", kind: "version-file"},
+		{path: "/INSTALL", kind: "version-file"},
+		{path: "/install", kind: "version-file"},
+		{path: "/LICENSE", kind: "version-file"},
+		{path: "/license", kind: "version-file"},
+		{path: "/actuator", kind: "actuator"},
+		{path: "/actuator/health", kind: "actuator"},
+		{path: "/actuator/info", kind: "actuator"},
+		{path: "/actuator/metrics", kind: "actuator"},
+		{path: "/actuator/env", kind: "actuator"},
+		{path: "/actuator/heapdump", kind: "actuator"},
+		{path: "/actuator/threaddump", kind: "actuator"},
+		{path: "/actuator/logfile", kind: "actuator"},
+		{path: "/actuator/httptrace", kind: "actuator"},
+		{path: "/actuator/sessions", kind: "actuator"},
+		{path: "/actuator/beans", kind: "actuator"},
+		{path: "/actuator/dump", kind: "actuator"},
+		{path: "/actuator/shutdown", kind: "actuator"},
+		{path: "/actuator/restart", kind: "actuator"},
+		{path: "/actuator/refresh", kind: "actuator"},
 	}
 
 	for _, item := range paths {
@@ -91,10 +142,10 @@ func (p *Plugin) Check(ctx context.Context, target *types.Target, endpoint *type
 			continue
 		}
 
-		if resp.StatusCode >= 200 && resp.StatusCode < 300 {
+		if resp.StatusCode >= 200 && resp.StatusCode < 300 ||
+			resp.StatusCode == 401 || resp.StatusCode == 403 {
 			evidence := item.path
 			if item.kind == "phpinfo" && !looksLikePHPInfo(resp.Body) {
-				// false positive 방지
 				continue
 			}
 			if item.kind == "editor" && !looksLikeEditorExposure(resp.Body, item.path) {
@@ -104,12 +155,17 @@ func (p *Plugin) Check(ctx context.Context, target *types.Target, endpoint *type
 				continue
 			}
 
+			detail := fmt.Sprintf("Accessible sensitive resource: %s", evidence)
+			if resp.StatusCode == 401 || resp.StatusCode == 403 {
+				detail = fmt.Sprintf("Potential admin/actuator page (HTTP %d): %s", resp.StatusCode, evidence)
+			}
+
 			findings = append(findings, p.newFinding(
 				testURL,
 				"GET",
 				item.kind,
 				"",
-				fmt.Sprintf("Accessible sensitive resource: %s", evidence),
+				detail,
 				resp,
 				[]string{"CWE-200", "CWE-540"},
 				0.9,

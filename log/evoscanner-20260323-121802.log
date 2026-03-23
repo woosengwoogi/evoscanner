@@ -1,0 +1,3 @@
+2026/03/23 12:18:10 engine.go:76: [*] Probing 5 endpoints for latency...
+2026/03/23 12:18:10 engine.go:530: [*] Timeout (#3), threads reduced to 7
+2026/03/23 12:18:10 engine.go:88: [*] Probe complete: avg latency=465ms, threads=5
