@@ -27,11 +27,15 @@ type Engine struct {
 	currentURL    atomic.Value // string: currently running URL
 
 	// Adaptive thread management
-	currentThreads atomic.Int32 // current thread count
-	avgLatencyMs   atomic.Int64 // average latency in milliseconds
-	timeoutCount   atomic.Int32 // number of timeouts/slow responses
+	currentThreads atomic.Int32
+	avgLatencyMs   atomic.Int64
+	timeoutCount   atomic.Int32
 
-	currentDelay int
+	currentDelay        int
+	emaLatency          float64
+	emaAlpha            float64
+	cooldownUntil       time.Time
+	threadCooldownUntil time.Time
 }
 
 // Stats tracks scan progress.
@@ -45,11 +49,13 @@ type Stats struct {
 // NewEngine creates a new scan engine.
 func NewEngine(config *types.ScanConfig, registry *Registry, client HttpClient) *Engine {
 	return &Engine{
-		config:    config,
-		registry:  registry,
-		client:    client,
-		findings:  make([]types.Finding, 0),
-		endpoints: make([]types.Endpoint, 0),
+		config:     config,
+		registry:   registry,
+		client:     client,
+		findings:   make([]types.Finding, 0),
+		endpoints:  make([]types.Endpoint, 0),
+		emaAlpha:   0.2,
+		emaLatency: 0,
 	}
 }
 
@@ -78,6 +84,12 @@ func (e *Engine) Scan(ctx context.Context, target *types.Target, loadedState *ty
 	// Store endpoints from target (crawled or loaded from checkpoint) for checkpoint saving
 	if len(target.Endpoints) > 0 && len(e.endpoints) == 0 {
 		e.endpoints = append(e.endpoints, target.Endpoints...)
+	}
+
+	if len(e.endpoints) > 0 {
+		e.endpoints = types.DeduplicateEndpoints(e.endpoints)
+		e.endpoints = types.LimitMenuEndpoints(e.endpoints)
+		target.Endpoints = e.endpoints
 	}
 
 	// Initialize adaptive thread management if enabled
@@ -202,27 +214,43 @@ func (e *Engine) Scan(ctx context.Context, target *types.Target, loadedState *ty
 			defer wg.Done()
 			defer func() { <-sem }()
 
-			// Check if context cancelled
+			itemCtx := ctx
+
+			if e.config.NoHangMode {
+				timeoutCtx, cancel := context.WithTimeout(ctx, e.config.Timeout)
+				itemCtx = timeoutCtx
+				defer cancel()
+			}
+
 			select {
 			case <-ctx.Done():
 				return
 			default:
 			}
 
-			// Update current work info (lock-free, read by progress goroutine)
 			e.currentPlugin.Store(wi.plugin.ID())
 			e.currentURL.Store(wi.endpoint.URL)
 
 			latency := e.client.GetRecentLatency()
 			if latency > 0 || e.config.DelayMs > 0 {
 				e.mu.Lock()
-				if latency > 5000 {
+
+				if e.emaLatency == 0 {
+					e.emaLatency = float64(latency)
+				} else {
+					e.emaLatency = (e.emaAlpha * float64(latency)) + ((1 - e.emaAlpha) * e.emaLatency)
+				}
+
+				emaVal := e.emaLatency
+				if emaVal > 3000 {
+					e.currentDelay += 300
+				} else if emaVal > 2000 {
 					e.currentDelay += 200
-				} else if latency > 2000 {
+				} else if emaVal > 1000 {
 					e.currentDelay += 100
-				} else if latency > 1000 {
-					e.currentDelay += 50
-				} else if latency < 500 && e.currentDelay > 0 {
+				} else if emaVal < 500 && e.currentDelay > 0 {
+					e.currentDelay -= 50
+				} else if emaVal < 300 {
 					e.currentDelay -= 25
 				}
 
@@ -248,9 +276,13 @@ func (e *Engine) Scan(ctx context.Context, target *types.Target, loadedState *ty
 				}
 			}
 
-			findings, err := wi.plugin.Check(ctx, target, wi.endpoint, e.client)
+			findings, err := wi.plugin.Check(itemCtx, target, wi.endpoint, e.client)
 			if err != nil {
-				if e.config.Verbose {
+				if e.config.NoHangMode && itemCtx.Err() == context.DeadlineExceeded {
+					if e.config.Verbose {
+						log.Printf("[SKIP] %s on %s: timeout exceeded", wi.plugin.ID(), wi.endpoint.URL)
+					}
+				} else if e.config.Verbose {
 					log.Printf("[WARN] %s on %s: %v", wi.plugin.ID(), wi.endpoint.URL, err)
 				}
 			}
@@ -538,26 +570,45 @@ func (e *Engine) checkAndAdjustThreads() {
 	minThreads := int32(1)
 
 	slowThresholdMs := e.config.SlowThreshold.Milliseconds()
+	now := time.Now()
 
 	if avgLatency > slowThresholdMs {
-		newThreads := current - 1
+		var newThreads int32
+		if current > 50 {
+			newThreads = int32(float32(current) * 0.8)
+		} else {
+			newThreads = current - 1
+		}
 		if newThreads < minThreads {
 			newThreads = minThreads
 		}
 		if newThreads != current {
 			e.currentThreads.Store(newThreads)
-			log.Printf("[*] Slow response (avg: %dms > %dms), threads: %d -> %d",
-				avgLatency, slowThresholdMs, current, newThreads)
+			cooldownSec := int(current)
+			if cooldownSec > 30 {
+				cooldownSec = 30
+			}
+			e.threadCooldownUntil = now.Add(time.Duration(cooldownSec) * time.Second)
+			log.Printf("[*] Slow response (avg: %dms > %dms), threads: %d -> %d, cooldown: %ds",
+				avgLatency, slowThresholdMs, current, newThreads, cooldownSec)
 		}
 	} else if avgLatency < 500 && current < maxThreads {
+		if now.Before(e.threadCooldownUntil) {
+			return
+		}
 		newThreads := current + 1
 		if newThreads > maxThreads {
 			newThreads = maxThreads
 		}
 		if newThreads != current {
 			e.currentThreads.Store(newThreads)
-			log.Printf("[*] Fast response (avg: %dms < 500ms), threads: %d -> %d",
-				avgLatency, current, newThreads)
+			cooldownSec := int(newThreads)
+			if cooldownSec > 30 {
+				cooldownSec = 30
+			}
+			e.threadCooldownUntil = now.Add(time.Duration(cooldownSec) * time.Second)
+			log.Printf("[*] Fast response (avg: %dms < 500ms), threads: %d -> %d, cooldown: %ds",
+				avgLatency, current, newThreads, cooldownSec)
 		}
 	}
 }
@@ -565,12 +616,20 @@ func (e *Engine) checkAndAdjustThreads() {
 // recordTimeout increments timeout count and reduces threads.
 func (e *Engine) recordTimeout() {
 	count := e.timeoutCount.Add(1)
-	newThreads := e.currentThreads.Add(-1)
+	current := e.currentThreads.Load()
+	newThreads := current - 1
 	if newThreads < 1 {
-		e.currentThreads.Store(1)
+		newThreads = 1
 	}
+	e.currentThreads.Store(newThreads)
+	cooldownSec := int(current)
+	if cooldownSec > 30 {
+		cooldownSec = 30
+	}
+	e.threadCooldownUntil = time.Now().Add(time.Duration(cooldownSec) * time.Second)
 	if count%3 == 0 {
-		log.Printf("[*] Timeout (#%d), threads reduced to %d", count, e.currentThreads.Load())
+		log.Printf("[Timeout #%d] Threads: %d, AvgLatency: %dms, CurrentDelay: %dms, cooldown: %ds",
+			count, e.currentThreads.Load(), e.avgLatencyMs.Load(), e.currentDelay, cooldownSec)
 	}
 }
 

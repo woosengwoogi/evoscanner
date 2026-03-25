@@ -26,17 +26,22 @@ var (
 
 // Crawler discovers endpoints on a target.
 type Crawler struct {
-	client       scanner.HttpClient
-	config       *types.ScanConfig
-	visited      map[string]bool
-	mu           sync.Mutex
-	baseURL      *url.URL
-	endpoints    []types.Endpoint
-	queue        []string
-	workerCount  int
-	startTime    time.Time
-	currentDelay int
-	avgLatency   int64
+	client             scanner.HttpClient
+	config             *types.ScanConfig
+	visited            map[string]bool
+	mu                 sync.Mutex
+	baseURL            *url.URL
+	endpoints          []types.Endpoint
+	queue              []string
+	workerCount        int
+	startTime          time.Time
+	currentDelay       int
+	avgLatency         int64
+	emaLatency         float64
+	emaAlpha           float64
+	cooldownUntil      time.Time
+	consecutiveErrors  int
+	decreaseDelayUntil time.Time
 }
 
 func New(client scanner.HttpClient, config *types.ScanConfig) *Crawler {
@@ -46,22 +51,17 @@ func New(client scanner.HttpClient, config *types.ScanConfig) *Crawler {
 	}
 	delayMax := config.CrawlDelayMax
 	if delayMax < 0 {
-		delayMax = 1000
-	}
-	delayMin := config.CrawlDelayMin
-	if delayMin < 0 {
-		delayMin = 0
-	}
-	if delayMin > delayMax {
-		delayMin = delayMax
+		delayMax = 5000
 	}
 	return &Crawler{
 		client:       client,
 		config:       config,
 		visited:      make(map[string]bool),
 		workerCount:  workers,
-		currentDelay: delayMin,
+		currentDelay: 300, // start at 300ms
 		avgLatency:   0,
+		emaAlpha:     0.2,
+		emaLatency:   0,
 	}
 }
 
@@ -276,31 +276,81 @@ func (c *Crawler) crawlURL(ctx context.Context, rawURL string, parentURL string,
 		return
 	}
 
+	// Handle 403/429 errors - enter cooldown
+	if resp != nil && (resp.StatusCode == 403 || resp.StatusCode == 429) {
+		c.mu.Lock()
+		if time.Now().After(c.cooldownUntil) {
+			c.consecutiveErrors++
+			cooldownDuration := time.Duration(c.consecutiveErrors) * 30 * time.Second
+			if cooldownDuration > 120*time.Second {
+				cooldownDuration = 120 * time.Second
+			}
+			c.cooldownUntil = time.Now().Add(cooldownDuration)
+			c.currentDelay = c.config.CrawlDelayMax
+			if c.currentDelay < 1000 {
+				c.currentDelay = 1000
+			}
+			if c.config.Verbose {
+				log.Printf("[WARN] Rate limit detected (%d). Cooldown: %v, delay: %dms",
+					resp.StatusCode, cooldownDuration, c.currentDelay)
+			}
+		}
+		c.mu.Unlock()
+		return
+	}
+
+	// Reset consecutive errors on success
+	if resp != nil && resp.StatusCode >= 200 && resp.StatusCode < 300 {
+		c.mu.Lock()
+		c.consecutiveErrors = 0
+		c.mu.Unlock()
+	}
+
 	if c.config.CrawlAdaptive && resp != nil && resp.Latency > 0 {
 		latencyMs := resp.Latency
+		now := time.Now()
 
 		c.mu.Lock()
-		oldDelay := c.currentDelay
 
-		if latencyMs > 5000 {
+		if c.emaLatency == 0 {
+			c.emaLatency = float64(latencyMs)
+		} else {
+			c.emaLatency = (c.emaAlpha * float64(latencyMs)) + ((1 - c.emaAlpha) * c.emaLatency)
+		}
+
+		emaVal := c.emaLatency
+
+		if emaVal > 3000 {
+			c.currentDelay += 300
+			c.decreaseDelayUntil = now.Add(5 * time.Second)
+		} else if emaVal > 2000 {
 			c.currentDelay += 200
-		} else if latencyMs > 2000 {
+			c.decreaseDelayUntil = now.Add(5 * time.Second)
+		} else if emaVal > 1000 {
 			c.currentDelay += 100
-		} else if latencyMs > 1000 {
-			c.currentDelay += 50
-		} else if latencyMs < 500 && c.currentDelay > 0 {
-			c.currentDelay -= 25
+			c.decreaseDelayUntil = now.Add(5 * time.Second)
+		} else if emaVal < 500 && c.currentDelay > 0 {
+			if now.After(c.decreaseDelayUntil) {
+				c.currentDelay -= 50
+				if c.currentDelay < 0 {
+					c.currentDelay = 0
+				}
+			}
+		} else if emaVal < 300 {
+			if now.After(c.decreaseDelayUntil) {
+				c.currentDelay -= 25
+				if c.currentDelay < 0 {
+					c.currentDelay = 0
+				}
+			}
 		}
 
-		if c.currentDelay < c.config.CrawlDelayMin {
-			c.currentDelay = c.config.CrawlDelayMin
-		}
-		if c.config.CrawlDelayMax > 0 && c.currentDelay > c.config.CrawlDelayMax {
+		if c.currentDelay > c.config.CrawlDelayMax {
 			c.currentDelay = c.config.CrawlDelayMax
 		}
 
-		if oldDelay != c.currentDelay && c.config.Verbose {
-			log.Printf("[*] Adaptive crawl delay: %dms (latency: %dms)", c.currentDelay, latencyMs)
+		if c.config.Verbose {
+			log.Printf("[*] EMA: %.1fms, delay: %dms", c.emaLatency, c.currentDelay)
 		}
 		c.mu.Unlock()
 

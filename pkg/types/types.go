@@ -4,7 +4,11 @@ package types
 import (
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"os"
+	"regexp"
+	"sort"
+	"strings"
 	"time"
 )
 
@@ -264,4 +268,245 @@ func (f *Finding) String() string {
 	return fmt.Sprintf("[%s%s%s] %s — %s (confidence: %.0f%%)",
 		f.Severity.Color(), f.Severity, f.Severity.Reset(),
 		f.Name, f.URL, f.Confidence*100)
+}
+
+var staticExtensions = []string{
+	".png", ".jpg", ".jpeg", ".gif", ".svg", ".ico", ".webp", ".bmp", ".tiff", ".tif", ".raw", ".psd", ".eps", ".ai",
+	".css", ".scss", ".sass", ".less", ".styl",
+	".js", ".jsx", ".ts", ".tsx", ".mjs", ".cjs",
+	".woff", ".woff2", ".ttf", ".eot", ".otf", ".fon",
+	".mp4", ".webm", ".avi", ".mov", ".wmv", ".flv", ".mkv", ".mpeg", ".mpg", ".3gp",
+	".mp3", ".wav", ".ogg", ".flac", ".aac", ".wma", ".m4a",
+	".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".odt", ".ods", ".odp", ".rtf", ".csv",
+	".exe", ".msi", ".dll", ".so", ".dylib", ".app", ".deb", ".rpm", ".apk",
+	".xml", ".yaml", ".yml", ".ini", ".cfg", ".conf", ".properties",
+	".swf", ".cur", ".ani", ".map", ".lock", ".log",
+}
+
+// IsStaticResource returns true if URL points to a static file
+func IsStaticResource(url string) bool {
+	for _, ext := range staticExtensions {
+		if len(url) > len(ext) && (url[len(url)-len(ext):] == ext ||
+			url[len(url)-len(ext)-1:len(url)-len(ext)] == "."+ext) {
+			return true
+		}
+	}
+	return false
+}
+
+// RemoveSessionID removes session IDs from URL (jsessionid, phpsessid, asp.net session, etc.)
+func RemoveSessionID(url string) string {
+	sessionPatterns := []string{
+		";jsessionid=", ";JSESSIONID=",
+		"?jsessionid=", "?JSESSIONID=",
+		"?PHPSESSID=", "?phpsessid=",
+		"?ASP.NET_SessionId=", "?asp.net_sessionid=",
+		"?__RequestVerificationToken=", "?requestverificationtoken=",
+	}
+	for _, pattern := range sessionPatterns {
+		if idx := strings.Index(url, pattern); idx != -1 {
+			// Remove from pattern to next & or end
+			endIdx := idx + len(pattern)
+			for endIdx < len(url) && url[endIdx] != '&' {
+				endIdx++
+			}
+			return url[:idx] + url[endIdx:]
+		}
+	}
+	return url
+}
+
+var uuidRegex = regexp.MustCompile(`/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}(/|$)`)
+
+func replaceNumericIDs(path string) string {
+	result := make([]byte, 0, len(path))
+	i := 0
+	for i < len(path) {
+		if path[i] == '/' && i+1 < len(path) && path[i+1] >= '0' && path[i+1] <= '9' {
+			j := i + 1
+			for j < len(path) && path[j] >= '0' && path[j] <= '9' {
+				j++
+			}
+			result = append(result, '/')
+			result = append(result, []byte("{ID}")...)
+			i = j
+		} else {
+			result = append(result, path[i])
+			i++
+		}
+	}
+	return string(result)
+}
+
+func replaceUUIDs(path string) string {
+	return uuidRegex.ReplaceAllString(path, "/{UUID}$1")
+}
+
+func normalizePath(path string) string {
+	path = replaceNumericIDs(path)
+	path = replaceUUIDs(path)
+	return path
+}
+
+var whitelistKeywords = []string{
+	"upload", "uploadFile", "fileUpload", "fileupload", "attach", "attachment",
+	"download", "downFile", "filedown", "export", "import",
+	"write", "regist", "register", "signup", "create", "insert", "add",
+	"edit", "modify", "update", "save", "saveData", "submit",
+	"delete", "remove", "delData", "erase",
+	"login", "logout", "signin", "signout", "signup", "join",
+	"password", "passwd", "pwd", "changePwd", "resetPwd",
+	"auth", "authorize", "permission", "access", "token",
+	"session", "sess", "credential", "cert",
+	"admin", "manage", "management", "config", "setting",
+	"system", "initialize", "init", "setup", "install",
+	"api", "rest", "graphql", "query", "mutation",
+	"payment", "pay", "card", "credit", "billing",
+	"transfer", "transaction", "trade", "account",
+	"search", "query", "find", "fetch", "load",
+	"comment", "reply", "review", "rating", "vote",
+	"profile", "user", "member", "customer", "client",
+	"form", "input", "textarea", "select", "checkbox", "radio",
+	"agree", "terms", "policy", "privacy", "personal",
+	"phone", "mobile", "tel", "email", "address", "zipcode",
+	"birth", "ssn", "resident", "foreigner", "identity",
+	"sql", "query", "search", "where", "order", "sort",
+	"filter", "column", "table", "database", "db",
+	"content", "html", "text", "message", "memo", "note",
+	"title", "subject", "body", "desc", "description",
+}
+
+func isWhitelisted(url string) bool {
+	lower := strings.ToLower(url)
+	for _, kw := range whitelistKeywords {
+		if strings.Contains(lower, kw) {
+			return true
+		}
+	}
+	return false
+}
+
+var menuParamNames = []string{"menuCd", "MENU_CD", "menu_cd", "menuId", "menu_id", "menuCode", "menu_code"}
+
+func isMenuOnlyParam(key string) bool {
+	for _, menuKey := range menuParamNames {
+		if key == menuKey {
+			return true
+		}
+	}
+	return false
+}
+
+var commonPaginationParams = map[string]bool{
+	"page": true, "pageNo": true, "page_no": true, "p": true, "num": true, "pageNum": true,
+}
+
+func NormalizeURL(rawURL string) string {
+	urlStr := RemoveSessionID(rawURL)
+
+	if strings.HasPrefix(urlStr, "http") {
+		parsed, err := url.Parse(rawURL)
+		if err == nil {
+			parsed.Path = normalizePath(parsed.Path)
+
+			if parsed.RawQuery != "" {
+				params, _ := url.ParseQuery(parsed.RawQuery)
+				paramKeys := make([]string, 0, len(params))
+				hasMenu := false
+				hasOther := false
+
+				for key := range params {
+					paramKeys = append(paramKeys, key)
+					if isMenuOnlyParam(key) {
+						hasMenu = true
+					} else if !commonPaginationParams[key] {
+						hasOther = true
+					}
+				}
+
+				filtered := url.Values{}
+				for key, values := range params {
+					if len(values) > 0 {
+						if hasMenu && !hasOther && isMenuOnlyParam(key) {
+							filtered[key] = []string{"{MENU}"}
+						} else {
+							filtered[key] = []string{values[0]}
+						}
+					}
+				}
+				sort.Strings(paramKeys)
+				normalizedPairs := make([]string, 0, len(paramKeys))
+				for _, key := range paramKeys {
+					if vals, ok := filtered[key]; ok && len(vals) > 0 {
+						normalizedPairs = append(normalizedPairs, key+"="+vals[0])
+					}
+				}
+				parsed.RawQuery = strings.Join(normalizedPairs, "&")
+			}
+
+			urlStr = parsed.String()
+		}
+	}
+
+	return urlStr
+}
+
+func DeduplicateEndpoints(endpoints []Endpoint) []Endpoint {
+	seen := make(map[string]bool)
+	result := make([]Endpoint, 0, len(endpoints))
+
+	for _, ep := range endpoints {
+		if IsStaticResource(ep.URL) {
+			continue
+		}
+
+		if isWhitelisted(ep.URL) {
+			key := ep.Method + ":" + ep.URL
+			if !seen[key] {
+				seen[key] = true
+				result = append(result, ep)
+			}
+			continue
+		}
+
+		normalized := NormalizeURL(ep.URL)
+		key := ep.Method + ":" + normalized
+
+		if !seen[key] {
+			seen[key] = true
+			result = append(result, ep)
+		}
+	}
+
+	return result
+}
+
+const maxMenuEndpoints = 5
+
+func LimitMenuEndpoints(endpoints []Endpoint) []Endpoint {
+	menuGroups := make(map[string][]Endpoint)
+	otherEndpoints := make([]Endpoint, 0, len(endpoints))
+
+	for _, ep := range endpoints {
+		normalized := NormalizeURL(ep.URL)
+		if strings.Contains(normalized, "{MENU}") {
+			key := ep.Method + ":" + normalized
+			menuGroups[key] = append(menuGroups[key], ep)
+		} else {
+			otherEndpoints = append(otherEndpoints, ep)
+		}
+	}
+
+	result := make([]Endpoint, 0, len(otherEndpoints)+len(menuGroups)*maxMenuEndpoints)
+	result = append(result, otherEndpoints...)
+
+	for _, eps := range menuGroups {
+		if len(eps) > maxMenuEndpoints {
+			result = append(result, eps[:maxMenuEndpoints]...)
+		} else {
+			result = append(result, eps...)
+		}
+	}
+
+	return result
 }

@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"net/url"
 	"os"
 	"os/signal"
 	"strings"
@@ -94,7 +95,7 @@ func cmdScan(args []string) {
 	targetShort := fs.String("t", "", "Target URL to scan (shorthand)")
 
 	// Scan behavior
-	threads := fs.Int("threads", 10, "Number of concurrent threads")
+	threads := fs.Int("threads", 1, "Number of concurrent threads")
 	maxThreads := fs.Int("max-threads", 100, "Maximum threads for adaptive mode")
 	adaptive := fs.Bool("adaptive-threads", true, "Enable adaptive thread adjustment based on response time (default: enabled)")
 	probeCount := fs.Int("probe-count", 5, "Number of URLs to probe for latency measurement")
@@ -111,7 +112,7 @@ func cmdScan(args []string) {
 	crawlWorkers := fs.Int("crawl-workers", 1, "Number of parallel workers for crawling")
 	crawlAdaptive := fs.Bool("crawl-adaptive", true, "Enable adaptive delay based on response time (default: enabled)")
 	crawlDelayMin := fs.Int("crawl-delay-min", 0, "Minimum delay between crawl requests in ms (default: 0)")
-	crawlDelayMax := fs.Int("crawl-delay-max", 1000, "Maximum delay between crawl requests in ms (default: 1000)")
+	crawlDelayMax := fs.Int("crawl-delay-max", 5000, "Maximum delay between crawl requests in ms (default: 5000)")
 
 	// HTTP options
 	userAgent := fs.String("user-agent", "EvoScanner/1.0", "Custom User-Agent string")
@@ -130,7 +131,7 @@ func cmdScan(args []string) {
 	noDynamic := fs.Bool("no-dynamic", false, "Disable dynamic rules from evolution engine")
 
 	// Output
-	outputFormat := fs.String("format", "json", "Output format: json, html")
+	outputFormat := fs.String("format", "html", "Output format: json, html")
 	outputFile := fs.String("output", "", "Output file path (default: stdout)")
 	outputShort := fs.String("o", "", "Output file path (shorthand)")
 	logFile := fs.String("log-file", "", "Log file path (default: log/evoscanner-YYYYMMDD-HHMMSS.log)")
@@ -154,7 +155,7 @@ func cmdScan(args []string) {
 		fmt.Println()
 		fmt.Println("Examples:")
 		fmt.Println("  evoscanner scan -t https://example.com")
-		fmt.Println("  evoscanner scan -t https://example.com -format html -o report.html")
+		fmt.Println("  evoscanner scan -t https://example.com -o custom.html")
 		fmt.Println("  evoscanner scan -t https://example.com -plugins sql-injection,xss -v")
 		fmt.Println("  evoscanner scan -t https://example.com -proxy http://127.0.0.1:8080")
 	}
@@ -175,9 +176,25 @@ func cmdScan(args []string) {
 		os.Exit(1)
 	}
 
+	format := *outputFormat
 	outFile := *outputFile
 	if outFile == "" {
 		outFile = *outputShort
+	}
+	if outFile == "" && targetURL != "" {
+		if u, err := url.Parse(targetURL); err == nil {
+			hostname := u.Hostname()
+			if hostname != "" {
+				ext := format
+				if ext == "" {
+					ext = "html"
+				}
+				outFile = fmt.Sprintf("%s.%s", hostname, ext)
+			}
+		}
+	}
+	if format == "" {
+		format = "html"
 	}
 
 	isVerbose := *verbose || *verboseShort
@@ -238,7 +255,7 @@ func cmdScan(args []string) {
 		Cookies:         *cookies,
 		PluginFilter:    pluginIDs,
 		ExcludePlugins:  excludeIDs,
-		OutputFormat:    *outputFormat,
+		OutputFormat:    format,
 		OutputFile:      outFile,
 		Verbose:         isVerbose,
 		FollowRedirect:  *followRedirect,
