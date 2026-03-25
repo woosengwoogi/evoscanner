@@ -558,8 +558,10 @@ func (e *Engine) initAdaptiveThreads() {
 
 // checkAndAdjustThreads checks recent latency and adjusts thread count.
 func (e *Engine) checkAndAdjustThreads() {
+	lastLatency := e.client.GetLastLatency()
 	avgLatency := e.client.GetRecentLatency()
-	if avgLatency == 0 {
+
+	if lastLatency == 0 {
 		return
 	}
 
@@ -572,7 +574,7 @@ func (e *Engine) checkAndAdjustThreads() {
 	slowThresholdMs := e.config.SlowThreshold.Milliseconds()
 	now := time.Now()
 
-	if avgLatency > slowThresholdMs {
+	if lastLatency > slowThresholdMs {
 		var newThreads int32
 		if current > 50 {
 			newThreads = int32(float32(current) * 0.8)
@@ -589,8 +591,8 @@ func (e *Engine) checkAndAdjustThreads() {
 				cooldownSec = 30
 			}
 			e.threadCooldownUntil = now.Add(time.Duration(cooldownSec) * time.Second)
-			log.Printf("[*] Slow response (avg: %dms > %dms), threads: %d -> %d, cooldown: %ds",
-				avgLatency, slowThresholdMs, current, newThreads, cooldownSec)
+			log.Printf("[*] Slow response (last: %dms, avg: %dms > %dms), threads: %d -> %d, cooldown: %ds",
+				lastLatency, avgLatency, slowThresholdMs, current, newThreads, cooldownSec)
 		}
 	} else if avgLatency < 500 && current < maxThreads {
 		if now.Before(e.threadCooldownUntil) {

@@ -42,6 +42,9 @@ type HttpClient interface {
 
 	// GetRecentLatency returns average of recent latencies.
 	GetRecentLatency() int64
+
+	// GetLastLatency returns the most recent latency value.
+	GetLastLatency() int64
 }
 
 // Request represents an HTTP request to be sent.

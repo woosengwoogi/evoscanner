@@ -231,3 +231,14 @@ func (c *Client) GetRecentLatency() int64 {
 	}
 	return sum / int64(len(c.recentLatencies))
 }
+
+// GetLastLatency returns the most recent latency value.
+func (c *Client) GetLastLatency() int64 {
+	c.latencyMu.Lock()
+	defer c.latencyMu.Unlock()
+
+	if len(c.recentLatencies) == 0 {
+		return 0
+	}
+	return c.recentLatencies[len(c.recentLatencies)-1]
+}
