@@ -862,18 +862,19 @@ func BruteforceDirectories(ctx context.Context, baseURL string, client scanner.H
 	var mu sync.Mutex
 	var wg sync.WaitGroup
 	var currentDelay int
+	var emaLatency float64
+	var emaAlpha float64 = 0.2
+	var decreaseDelayUntil time.Time
 
-	delayMin := 0
-	delayMax := 1000
+	delayMax := 5000
+	adaptiveEnabled := true
 	if config != nil {
-		if config.CrawlDelayMin > 0 {
-			delayMin = config.CrawlDelayMin
-		}
 		if config.CrawlDelayMax > 0 {
 			delayMax = config.CrawlDelayMax
 		}
-		currentDelay = delayMin
+		adaptiveEnabled = config.CrawlAdaptive
 	}
+	currentDelay = 300
 
 	sem := make(chan struct{}, threads)
 
@@ -906,23 +907,49 @@ launchLoop:
 				}
 
 				latencyMs := resp.Latency
-				if latencyMs > 0 {
+				if adaptiveEnabled && latencyMs > 0 {
+					now := time.Now()
 					mu.Lock()
-					if latencyMs > 5000 {
+
+					if emaLatency == 0 {
+						emaLatency = float64(latencyMs)
+					} else {
+						emaLatency = (emaAlpha * float64(latencyMs)) + ((1 - emaAlpha) * emaLatency)
+					}
+
+					emaVal := emaLatency
+
+					if emaVal > 3000 {
+						currentDelay += 300
+						decreaseDelayUntil = now.Add(5 * time.Second)
+					} else if emaVal > 2000 {
 						currentDelay += 200
-					} else if latencyMs > 2000 {
+						decreaseDelayUntil = now.Add(5 * time.Second)
+					} else if emaVal > 1000 {
 						currentDelay += 100
-					} else if latencyMs > 1000 {
-						currentDelay += 50
-					} else if latencyMs < 500 && currentDelay > delayMin {
-						currentDelay -= 25
+						decreaseDelayUntil = now.Add(5 * time.Second)
+					} else if emaVal < 500 && currentDelay > 0 {
+						if now.After(decreaseDelayUntil) {
+							decreaseDelayUntil = now.Add(5 * time.Second)
+							currentDelay -= 50
+							if currentDelay < 0 {
+								currentDelay = 0
+							}
+						}
+					} else if emaVal < 300 {
+						if now.After(decreaseDelayUntil) {
+							decreaseDelayUntil = now.Add(5 * time.Second)
+							currentDelay -= 25
+							if currentDelay < 0 {
+								currentDelay = 0
+							}
+						}
 					}
-					if currentDelay < delayMin {
-						currentDelay = delayMin
-					}
+
 					if currentDelay > delayMax {
 						currentDelay = delayMax
 					}
+
 					mu.Unlock()
 
 					if currentDelay > 0 {

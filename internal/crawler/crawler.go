@@ -331,6 +331,7 @@ func (c *Crawler) crawlURL(ctx context.Context, rawURL string, parentURL string,
 			c.decreaseDelayUntil = now.Add(5 * time.Second)
 		} else if emaVal < 500 && c.currentDelay > 0 {
 			if now.After(c.decreaseDelayUntil) {
+				c.decreaseDelayUntil = now.Add(5 * time.Second)
 				c.currentDelay -= 50
 				if c.currentDelay < 0 {
 					c.currentDelay = 0
@@ -338,6 +339,7 @@ func (c *Crawler) crawlURL(ctx context.Context, rawURL string, parentURL string,
 			}
 		} else if emaVal < 300 {
 			if now.After(c.decreaseDelayUntil) {
+				c.decreaseDelayUntil = now.Add(5 * time.Second)
 				c.currentDelay -= 25
 				if c.currentDelay < 0 {
 					c.currentDelay = 0
