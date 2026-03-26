@@ -586,13 +586,10 @@ func (e *Engine) checkAndAdjustThreads() {
 		}
 		if newThreads != current {
 			e.currentThreads.Store(newThreads)
-			cooldownSec := int(current)
-			if cooldownSec > 30 {
-				cooldownSec = 30
-			}
-			e.threadCooldownUntil = now.Add(time.Duration(cooldownSec) * time.Second)
-			log.Printf("[*] Slow response (last: %dms, avg: %dms > %dms), threads: %d -> %d, cooldown: %ds",
-				lastLatency, avgLatency, slowThresholdMs, current, newThreads, cooldownSec)
+			cooldownMs := int(lastLatency) * int(current)
+			e.threadCooldownUntil = now.Add(time.Duration(cooldownMs) * time.Millisecond)
+			log.Printf("[*] Slow response (last: %dms, avg: %dms > %dms), threads: %d -> %d, cooldown: %dms",
+				lastLatency, avgLatency, slowThresholdMs, current, newThreads, cooldownMs)
 		}
 	} else if avgLatency < 500 && current < maxThreads {
 		if now.Before(e.threadCooldownUntil) {
@@ -604,13 +601,10 @@ func (e *Engine) checkAndAdjustThreads() {
 		}
 		if newThreads != current {
 			e.currentThreads.Store(newThreads)
-			cooldownSec := int(newThreads)
-			if cooldownSec > 30 {
-				cooldownSec = 30
-			}
-			e.threadCooldownUntil = now.Add(time.Duration(cooldownSec) * time.Second)
-			log.Printf("[*] Fast response (avg: %dms < 500ms), threads: %d -> %d, cooldown: %ds",
-				avgLatency, current, newThreads, cooldownSec)
+			cooldownMs := int(avgLatency) * int(newThreads)
+			e.threadCooldownUntil = now.Add(time.Duration(cooldownMs) * time.Millisecond)
+			log.Printf("[*] Fast response (avg: %dms < 500ms), threads: %d -> %d, cooldown: %dms",
+				avgLatency, current, newThreads, cooldownMs)
 		}
 	}
 }
@@ -624,14 +618,12 @@ func (e *Engine) recordTimeout() {
 		newThreads = 1
 	}
 	e.currentThreads.Store(newThreads)
-	cooldownSec := int(current)
-	if cooldownSec > 30 {
-		cooldownSec = 30
-	}
-	e.threadCooldownUntil = time.Now().Add(time.Duration(cooldownSec) * time.Second)
+	avgLatency := e.avgLatencyMs.Load()
+	cooldownMs := int(avgLatency) * int(current)
+	e.threadCooldownUntil = time.Now().Add(time.Duration(cooldownMs) * time.Millisecond)
 	if count%3 == 0 {
-		log.Printf("[Timeout #%d] Threads: %d, AvgLatency: %dms, CurrentDelay: %dms, cooldown: %ds",
-			count, e.currentThreads.Load(), e.avgLatencyMs.Load(), e.currentDelay, cooldownSec)
+		log.Printf("[Timeout #%d] Threads: %d, AvgLatency: %dms, CurrentDelay: %dms, cooldown: %dms",
+			count, e.currentThreads.Load(), avgLatency, e.currentDelay, cooldownMs)
 	}
 }
 
