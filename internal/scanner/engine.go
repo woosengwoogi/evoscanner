@@ -30,6 +30,7 @@ type Engine struct {
 	currentThreads atomic.Int32
 	avgLatencyMs   atomic.Int64
 	timeoutCount   atomic.Int32
+	activeWorkers  int32
 
 	currentDelay        int
 	emaLatency          float64
@@ -180,8 +181,7 @@ func (e *Engine) Scan(ctx context.Context, target *types.Target, loadedState *ty
 	}()
 
 	// Run work items with bounded concurrency
-	currentThreads := e.getCurrentThreads()
-	sem := make(chan struct{}, currentThreads)
+	var activeWorkers int32
 	var wg sync.WaitGroup
 
 	// Start adaptive thread adjustment goroutine
@@ -207,12 +207,28 @@ func (e *Engine) Scan(ctx context.Context, target *types.Target, loadedState *ty
 		default:
 		}
 
-		sem <- struct{}{}
 		wg.Add(1)
 
 		go func(wi workItem) {
 			defer wg.Done()
-			defer func() { <-sem }()
+
+			maxThreads := int(e.getCurrentThreads())
+			for {
+				active := atomic.LoadInt32(&activeWorkers)
+				if active < int32(maxThreads) {
+					if atomic.CompareAndSwapInt32(&activeWorkers, active, active+1) {
+						break
+					}
+				}
+				select {
+				case <-ctx.Done():
+					wg.Done()
+					return
+				case <-time.After(10 * time.Millisecond):
+				}
+			}
+
+			defer atomic.AddInt32(&activeWorkers, -1)
 
 			itemCtx := ctx
 
@@ -561,7 +577,9 @@ func (e *Engine) checkAndAdjustThreads() {
 	lastLatency := e.client.GetLastLatency()
 	avgLatency := e.client.GetRecentLatency()
 
-	if lastLatency == 0 {
+	log.Printf("[DEBUG] checkAndAdjustThreads: last=%d, avg=%d", lastLatency, avgLatency)
+
+	if avgLatency == 0 {
 		return
 	}
 
