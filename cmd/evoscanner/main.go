@@ -336,6 +336,25 @@ func cmdScan(args []string) {
 		fmt.Printf("[*] Threads: %d | Timeout: %s | Max Depth: %d\n", config.Threads, config.Timeout, config.MaxDepth)
 	}
 
+	// Check LLM status
+	cfg := loadLLMConfig()
+	router, err := llm.NewRouterFromConfig(cfg)
+	if err != nil {
+		fmt.Printf("[*] LLM: NOT CONFIGURED (set EVOSCANNER_OPENAI_API_KEY or EVOSCANNER_MINIMAX_API_KEY)\n")
+	} else {
+		status := router.Status()
+		hasProvider := false
+		for name, available := range status {
+			if available {
+				fmt.Printf("[*] LLM: %s (OK)\n", name)
+				hasProvider = true
+			}
+		}
+		if !hasProvider {
+			fmt.Printf("[*] LLM: No providers available\n")
+		}
+	}
+
 	// Initialize HTTP client (implements scanner.HttpClient directly)
 	httpClient := httpclient.New(config)
 

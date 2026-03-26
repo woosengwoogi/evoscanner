@@ -6,13 +6,16 @@ import (
 	"fmt"
 	"net/url"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/evoscanner/evoscanner/internal/scanner"
 	"github.com/evoscanner/evoscanner/pkg/types"
 )
 
-// Plugin checks brute-force/default credential exposures.
+var testedTargets = make(map[string]bool)
+var testedMu sync.Mutex
+
 type Plugin struct{}
 
 func (p *Plugin) ID() string { return "bruteforce" }
@@ -36,19 +39,24 @@ func (p *Plugin) Compliance() []types.ComplianceRef {
 }
 
 func (p *Plugin) Check(ctx context.Context, target *types.Target, endpoint *types.Endpoint, client scanner.HttpClient) ([]types.Finding, error) {
-	if target == nil || endpoint == nil {
+	if target == nil {
 		return nil, nil
 	}
 
-	baseURL := strings.TrimSpace(endpoint.URL)
-	if baseURL == "" {
-		baseURL = strings.TrimSpace(target.BaseURL)
-	}
+	baseURL := strings.TrimSpace(target.BaseURL)
 	if baseURL == "" {
 		return nil, nil
 	}
 
-	headers := mergeHeaders(target.Headers, endpoint.Headers)
+	testedMu.Lock()
+	if testedTargets[baseURL] {
+		testedMu.Unlock()
+		return nil, nil
+	}
+	testedTargets[baseURL] = true
+	testedMu.Unlock()
+
+	headers := target.Headers
 	findings := make([]types.Finding, 0)
 
 	wasTargets := []struct {
