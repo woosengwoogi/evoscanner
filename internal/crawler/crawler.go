@@ -526,5 +526,12 @@ func (c *Crawler) isSameScope(rawURL string) bool {
 	if err != nil {
 		return false
 	}
-	return parsed.Host == c.baseURL.Host
+	if parsed.Host != c.baseURL.Host {
+		return false
+	}
+	basePath := c.baseURL.Path
+	if basePath == "/" || basePath == "" {
+		return true
+	}
+	return strings.HasPrefix(parsed.Path, basePath)
 }

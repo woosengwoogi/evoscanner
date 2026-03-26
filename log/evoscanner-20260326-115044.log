@@ -1,0 +1,491 @@
+2026/03/26 11:50:44 crawler.go:355: [*] EMA: 199.0ms, delay: 250ms
+2026/03/26 11:50:45 crawler.go:355: [*] EMA: 166.2ms, delay: 250ms
+2026/03/26 11:50:45 crawler.go:355: [*] EMA: 139.8ms, delay: 250ms
+2026/03/26 11:50:45 crawler.go:355: [*] EMA: 119.2ms, delay: 250ms
+2026/03/26 11:50:46 crawler.go:355: [*] EMA: 102.4ms, delay: 250ms
+2026/03/26 11:50:46 crawler.go:355: [*] EMA: 89.7ms, delay: 250ms
+2026/03/26 11:50:46 crawler.go:355: [*] EMA: 79.2ms, delay: 250ms
+2026/03/26 11:50:46 crawler.go:355: [*] EMA: 70.7ms, delay: 250ms
+2026/03/26 11:50:47 crawler.go:355: [*] EMA: 63.6ms, delay: 250ms
+2026/03/26 11:50:47 crawler.go:355: [*] EMA: 58.1ms, delay: 250ms
+2026/03/26 11:50:47 crawler.go:355: [*] EMA: 53.5ms, delay: 250ms
+2026/03/26 11:50:48 crawler.go:355: [*] EMA: 50.2ms, delay: 250ms
+2026/03/26 11:50:48 crawler.go:355: [*] EMA: 72.3ms, delay: 250ms
+2026/03/26 11:50:48 crawler.go:355: [*] EMA: 79.7ms, delay: 250ms
+2026/03/26 11:50:49 crawler.go:355: [*] EMA: 100.3ms, delay: 250ms
+2026/03/26 11:50:49 crawler.go:355: [*] EMA: 108.3ms, delay: 250ms
+2026/03/26 11:50:50 crawler.go:355: [*] EMA: 114.2ms, delay: 200ms
+2026/03/26 11:50:50 crawler.go:355: [*] EMA: 113.8ms, delay: 200ms
+2026/03/26 11:50:50 crawler.go:355: [*] EMA: 102.6ms, delay: 200ms
+2026/03/26 11:50:51 crawler.go:355: [*] EMA: 91.7ms, delay: 200ms
+2026/03/26 11:50:51 crawler.go:355: [*] EMA: 110.8ms, delay: 200ms
+2026/03/26 11:50:51 crawler.go:355: [*] EMA: 98.6ms, delay: 200ms
+2026/03/26 11:50:52 crawler.go:355: [*] EMA: 118.1ms, delay: 200ms
+2026/03/26 11:50:53 crawler.go:355: [*] EMA: 120.3ms, delay: 200ms
+2026/03/26 11:50:53 crawler.go:355: [*] EMA: 105.4ms, delay: 200ms
+2026/03/26 11:50:53 crawler.go:355: [*] EMA: 107.7ms, delay: 200ms
+2026/03/26 11:50:54 crawler.go:355: [*] EMA: 95.0ms, delay: 200ms
+2026/03/26 11:50:54 crawler.go:355: [*] EMA: 94.4ms, delay: 200ms
+2026/03/26 11:50:54 crawler.go:355: [*] EMA: 84.5ms, delay: 200ms
+2026/03/26 11:50:55 crawler.go:355: [*] EMA: 84.0ms, delay: 200ms
+2026/03/26 11:50:55 crawler.go:355: [*] EMA: 81.8ms, delay: 150ms
+2026/03/26 11:50:55 crawler.go:355: [*] EMA: 79.8ms, delay: 150ms
+2026/03/26 11:50:55 crawler.go:355: [*] EMA: 78.7ms, delay: 150ms
+2026/03/26 11:50:56 crawler.go:355: [*] EMA: 77.9ms, delay: 150ms
+2026/03/26 11:50:56 crawler.go:355: [*] EMA: 77.6ms, delay: 150ms
+2026/03/26 11:50:56 crawler.go:355: [*] EMA: 77.4ms, delay: 150ms
+2026/03/26 11:50:56 crawler.go:355: [*] EMA: 69.0ms, delay: 150ms
+2026/03/26 11:50:57 crawler.go:355: [*] EMA: 63.0ms, delay: 150ms
+2026/03/26 11:50:57 crawler.go:355: [*] EMA: 57.8ms, delay: 150ms
+2026/03/26 11:50:57 crawler.go:355: [*] EMA: 53.2ms, delay: 150ms
+2026/03/26 11:50:57 crawler.go:355: [*] EMA: 49.4ms, delay: 150ms
+2026/03/26 11:50:57 crawler.go:355: [*] EMA: 46.5ms, delay: 150ms
+2026/03/26 11:50:58 crawler.go:355: [*] EMA: 43.8ms, delay: 150ms
+2026/03/26 11:50:58 crawler.go:355: [*] EMA: 43.4ms, delay: 150ms
+2026/03/26 11:50:58 crawler.go:355: [*] EMA: 41.8ms, delay: 150ms
+2026/03/26 11:50:58 crawler.go:355: [*] EMA: 40.8ms, delay: 150ms
+2026/03/26 11:50:59 crawler.go:355: [*] EMA: 39.2ms, delay: 150ms
+2026/03/26 11:50:59 crawler.go:355: [*] EMA: 38.4ms, delay: 150ms
+2026/03/26 11:50:59 crawler.go:355: [*] EMA: 38.7ms, delay: 150ms
+2026/03/26 11:50:59 crawler.go:355: [*] EMA: 38.6ms, delay: 150ms
+2026/03/26 11:50:59 crawler.go:355: [*] EMA: 39.5ms, delay: 150ms
+2026/03/26 11:50:59 crawler.go:355: [*] EMA: 38.0ms, delay: 150ms
+2026/03/26 11:51:00 crawler.go:355: [*] EMA: 38.0ms, delay: 150ms
+2026/03/26 11:51:00 crawler.go:355: [*] EMA: 37.4ms, delay: 100ms
+2026/03/26 11:51:00 crawler.go:355: [*] EMA: 37.5ms, delay: 100ms
+2026/03/26 11:51:00 crawler.go:355: [*] EMA: 38.0ms, delay: 100ms
+2026/03/26 11:51:00 crawler.go:355: [*] EMA: 38.0ms, delay: 100ms
+2026/03/26 11:51:00 crawler.go:355: [*] EMA: 38.0ms, delay: 100ms
+2026/03/26 11:51:01 crawler.go:355: [*] EMA: 38.0ms, delay: 100ms
+2026/03/26 11:51:01 crawler.go:355: [*] EMA: 37.6ms, delay: 100ms
+2026/03/26 11:51:01 crawler.go:355: [*] EMA: 37.5ms, delay: 100ms
+2026/03/26 11:51:01 crawler.go:355: [*] EMA: 37.6ms, delay: 100ms
+2026/03/26 11:51:01 crawler.go:355: [*] EMA: 38.1ms, delay: 100ms
+2026/03/26 11:51:01 crawler.go:355: [*] EMA: 38.1ms, delay: 100ms
+2026/03/26 11:51:01 crawler.go:355: [*] EMA: 37.2ms, delay: 100ms
+2026/03/26 11:51:02 crawler.go:355: [*] EMA: 37.0ms, delay: 100ms
+2026/03/26 11:51:02 crawler.go:355: [*] EMA: 37.4ms, delay: 100ms
+2026/03/26 11:51:02 crawler.go:355: [*] EMA: 37.9ms, delay: 100ms
+2026/03/26 11:51:02 crawler.go:355: [*] EMA: 37.1ms, delay: 100ms
+2026/03/26 11:51:02 crawler.go:355: [*] EMA: 37.5ms, delay: 100ms
+2026/03/26 11:51:03 crawler.go:355: [*] EMA: 36.8ms, delay: 100ms
+2026/03/26 11:51:03 crawler.go:355: [*] EMA: 36.6ms, delay: 100ms
+2026/03/26 11:51:03 crawler.go:355: [*] EMA: 36.7ms, delay: 100ms
+2026/03/26 11:51:03 crawler.go:355: [*] EMA: 36.6ms, delay: 100ms
+2026/03/26 11:51:03 crawler.go:355: [*] EMA: 35.9ms, delay: 100ms
+2026/03/26 11:51:03 crawler.go:355: [*] EMA: 36.1ms, delay: 100ms
+2026/03/26 11:51:03 crawler.go:355: [*] EMA: 35.7ms, delay: 100ms
+2026/03/26 11:51:04 crawler.go:102: [*] Crawl complete: 77 URLs, 158 endpoints (19.3s)
+2026/03/26 11:51:04 crawler.go:148: [*] Parsing 24 JS files for endpoints...
+2026/03/26 11:51:05 crawler.go:197: [*] JS parsing: +25 endpoints from 24 JS files
+2026/03/26 11:51:53 crawler.go:232: [*] Total: 183 endpoints (HTML: 158, augmented: 25)
+2026/03/26 11:52:00 engine.go:106: [*] Probing 5 endpoints for latency...
+2026/03/26 11:52:00 engine.go:118: [*] Probe complete: avg latency=52ms, threads=1
+2026/03/26 11:52:02 engine.go:580: [DEBUG] checkAndAdjustThreads: last=37, avg=34
+2026/03/26 11:52:02 engine.go:624: [*] Fast response (avg: 34ms < 500ms), threads: 1 -> 2, cooldown: 68ms
+2026/03/26 11:52:04 engine.go:580: [DEBUG] checkAndAdjustThreads: last=38, avg=44
+2026/03/26 11:52:04 engine.go:624: [*] Fast response (avg: 44ms < 500ms), threads: 2 -> 3, cooldown: 132ms
+2026/03/26 11:52:06 engine.go:580: [DEBUG] checkAndAdjustThreads: last=34, avg=34
+2026/03/26 11:52:06 engine.go:624: [*] Fast response (avg: 34ms < 500ms), threads: 3 -> 4, cooldown: 136ms
+2026/03/26 11:52:08 engine.go:580: [DEBUG] checkAndAdjustThreads: last=160, avg=61
+2026/03/26 11:52:08 engine.go:624: [*] Fast response (avg: 61ms < 500ms), threads: 4 -> 5, cooldown: 305ms
+2026/03/26 11:52:10 engine.go:580: [DEBUG] checkAndAdjustThreads: last=34, avg=35
+2026/03/26 11:52:10 engine.go:624: [*] Fast response (avg: 35ms < 500ms), threads: 5 -> 6, cooldown: 210ms
+2026/03/26 11:52:12 engine.go:580: [DEBUG] checkAndAdjustThreads: last=37, avg=59
+2026/03/26 11:52:12 engine.go:624: [*] Fast response (avg: 59ms < 500ms), threads: 6 -> 7, cooldown: 413ms
+2026/03/26 11:52:14 engine.go:580: [DEBUG] checkAndAdjustThreads: last=146, avg=68
+2026/03/26 11:52:14 engine.go:624: [*] Fast response (avg: 68ms < 500ms), threads: 7 -> 8, cooldown: 544ms
+2026/03/26 11:52:16 engine.go:580: [DEBUG] checkAndAdjustThreads: last=150, avg=139
+2026/03/26 11:52:16 engine.go:624: [*] Fast response (avg: 139ms < 500ms), threads: 8 -> 9, cooldown: 1251ms
+2026/03/26 11:52:18 engine.go:580: [DEBUG] checkAndAdjustThreads: last=153, avg=141
+2026/03/26 11:52:18 engine.go:624: [*] Fast response (avg: 141ms < 500ms), threads: 9 -> 10, cooldown: 1410ms
+2026/03/26 11:52:20 engine.go:580: [DEBUG] checkAndAdjustThreads: last=148, avg=148
+2026/03/26 11:52:20 engine.go:624: [*] Fast response (avg: 148ms < 500ms), threads: 10 -> 11, cooldown: 1628ms
+2026/03/26 11:52:22 engine.go:580: [DEBUG] checkAndAdjustThreads: last=35, avg=114
+2026/03/26 11:52:22 engine.go:624: [*] Fast response (avg: 114ms < 500ms), threads: 11 -> 12, cooldown: 1368ms
+2026/03/26 11:52:24 engine.go:580: [DEBUG] checkAndAdjustThreads: last=37, avg=35
+2026/03/26 11:52:24 engine.go:624: [*] Fast response (avg: 35ms < 500ms), threads: 12 -> 13, cooldown: 455ms
+2026/03/26 11:52:26 engine.go:580: [DEBUG] checkAndAdjustThreads: last=36, avg=45
+2026/03/26 11:52:26 engine.go:624: [*] Fast response (avg: 45ms < 500ms), threads: 13 -> 14, cooldown: 630ms
+2026/03/26 11:52:28 engine.go:580: [DEBUG] checkAndAdjustThreads: last=34, avg=36
+2026/03/26 11:52:28 engine.go:624: [*] Fast response (avg: 36ms < 500ms), threads: 14 -> 15, cooldown: 540ms
+2026/03/26 11:52:30 engine.go:580: [DEBUG] checkAndAdjustThreads: last=36, avg=79
+2026/03/26 11:52:30 engine.go:624: [*] Fast response (avg: 79ms < 500ms), threads: 15 -> 16, cooldown: 1264ms
+2026/03/26 11:52:30 engine.go:684: [*] Checkpoint saved: 41/740 checks, 74 endpoints
+2026/03/26 11:52:32 engine.go:580: [DEBUG] checkAndAdjustThreads: last=72, avg=36
+2026/03/26 11:52:32 engine.go:624: [*] Fast response (avg: 36ms < 500ms), threads: 16 -> 17, cooldown: 612ms
+2026/03/26 11:52:34 engine.go:580: [DEBUG] checkAndAdjustThreads: last=39, avg=54
+2026/03/26 11:52:34 engine.go:624: [*] Fast response (avg: 54ms < 500ms), threads: 17 -> 18, cooldown: 972ms
+2026/03/26 11:52:36 engine.go:580: [DEBUG] checkAndAdjustThreads: last=34, avg=35
+2026/03/26 11:52:36 engine.go:624: [*] Fast response (avg: 35ms < 500ms), threads: 18 -> 19, cooldown: 665ms
+2026/03/26 11:52:38 engine.go:580: [DEBUG] checkAndAdjustThreads: last=32, avg=44
+2026/03/26 11:52:38 engine.go:624: [*] Fast response (avg: 44ms < 500ms), threads: 19 -> 20, cooldown: 880ms
+2026/03/26 11:52:40 engine.go:580: [DEBUG] checkAndAdjustThreads: last=33, avg=35
+2026/03/26 11:52:40 engine.go:624: [*] Fast response (avg: 35ms < 500ms), threads: 20 -> 21, cooldown: 735ms
+2026/03/26 11:52:42 engine.go:580: [DEBUG] checkAndAdjustThreads: last=36, avg=35
+2026/03/26 11:52:42 engine.go:624: [*] Fast response (avg: 35ms < 500ms), threads: 21 -> 22, cooldown: 770ms
+2026/03/26 11:52:44 engine.go:580: [DEBUG] checkAndAdjustThreads: last=32, avg=35
+2026/03/26 11:52:44 engine.go:624: [*] Fast response (avg: 35ms < 500ms), threads: 22 -> 23, cooldown: 805ms
+2026/03/26 11:52:46 engine.go:580: [DEBUG] checkAndAdjustThreads: last=33, avg=35
+2026/03/26 11:52:46 engine.go:624: [*] Fast response (avg: 35ms < 500ms), threads: 23 -> 24, cooldown: 840ms
+2026/03/26 11:52:48 engine.go:580: [DEBUG] checkAndAdjustThreads: last=92, avg=51
+2026/03/26 11:52:48 engine.go:624: [*] Fast response (avg: 51ms < 500ms), threads: 24 -> 25, cooldown: 1275ms
+2026/03/26 11:52:50 engine.go:580: [DEBUG] checkAndAdjustThreads: last=42, avg=41
+2026/03/26 11:52:50 engine.go:624: [*] Fast response (avg: 41ms < 500ms), threads: 25 -> 26, cooldown: 1066ms
+2026/03/26 11:52:52 engine.go:580: [DEBUG] checkAndAdjustThreads: last=47, avg=50
+2026/03/26 11:52:52 engine.go:624: [*] Fast response (avg: 50ms < 500ms), threads: 26 -> 27, cooldown: 1350ms
+2026/03/26 11:52:54 engine.go:580: [DEBUG] checkAndAdjustThreads: last=92, avg=47
+2026/03/26 11:52:54 engine.go:624: [*] Fast response (avg: 47ms < 500ms), threads: 27 -> 28, cooldown: 1316ms
+2026/03/26 11:52:56 engine.go:580: [DEBUG] checkAndAdjustThreads: last=38, avg=36
+2026/03/26 11:52:56 engine.go:624: [*] Fast response (avg: 36ms < 500ms), threads: 28 -> 29, cooldown: 1044ms
+2026/03/26 11:52:58 engine.go:580: [DEBUG] checkAndAdjustThreads: last=37, avg=37
+2026/03/26 11:52:58 engine.go:624: [*] Fast response (avg: 37ms < 500ms), threads: 29 -> 30, cooldown: 1110ms
+2026/03/26 11:53:00 engine.go:580: [DEBUG] checkAndAdjustThreads: last=33, avg=34
+2026/03/26 11:53:00 engine.go:624: [*] Fast response (avg: 34ms < 500ms), threads: 30 -> 31, cooldown: 1054ms
+2026/03/26 11:53:00 engine.go:684: [*] Checkpoint saved: 98/740 checks, 74 endpoints
+2026/03/26 11:53:02 engine.go:580: [DEBUG] checkAndAdjustThreads: last=45, avg=62
+2026/03/26 11:53:02 engine.go:624: [*] Fast response (avg: 62ms < 500ms), threads: 31 -> 32, cooldown: 1984ms
+2026/03/26 11:53:04 engine.go:580: [DEBUG] checkAndAdjustThreads: last=72, avg=51
+2026/03/26 11:53:04 engine.go:624: [*] Fast response (avg: 51ms < 500ms), threads: 32 -> 33, cooldown: 1683ms
+2026/03/26 11:53:06 engine.go:580: [DEBUG] checkAndAdjustThreads: last=32, avg=47
+2026/03/26 11:53:06 engine.go:624: [*] Fast response (avg: 47ms < 500ms), threads: 33 -> 34, cooldown: 1598ms
+2026/03/26 11:53:08 engine.go:580: [DEBUG] checkAndAdjustThreads: last=36, avg=35
+2026/03/26 11:53:08 engine.go:624: [*] Fast response (avg: 35ms < 500ms), threads: 34 -> 35, cooldown: 1225ms
+2026/03/26 11:53:10 engine.go:580: [DEBUG] checkAndAdjustThreads: last=35, avg=35
+2026/03/26 11:53:10 engine.go:624: [*] Fast response (avg: 35ms < 500ms), threads: 35 -> 36, cooldown: 1260ms
+2026/03/26 11:53:12 engine.go:580: [DEBUG] checkAndAdjustThreads: last=40, avg=39
+2026/03/26 11:53:12 engine.go:624: [*] Fast response (avg: 39ms < 500ms), threads: 36 -> 37, cooldown: 1443ms
+2026/03/26 11:53:14 engine.go:580: [DEBUG] checkAndAdjustThreads: last=43, avg=42
+2026/03/26 11:53:14 engine.go:624: [*] Fast response (avg: 42ms < 500ms), threads: 37 -> 38, cooldown: 1596ms
+2026/03/26 11:53:16 engine.go:580: [DEBUG] checkAndAdjustThreads: last=79, avg=50
+2026/03/26 11:53:16 engine.go:624: [*] Fast response (avg: 50ms < 500ms), threads: 38 -> 39, cooldown: 1950ms
+2026/03/26 11:53:18 engine.go:580: [DEBUG] checkAndAdjustThreads: last=34, avg=35
+2026/03/26 11:53:18 engine.go:624: [*] Fast response (avg: 35ms < 500ms), threads: 39 -> 40, cooldown: 1400ms
+2026/03/26 11:53:20 engine.go:580: [DEBUG] checkAndAdjustThreads: last=39, avg=45
+2026/03/26 11:53:20 engine.go:624: [*] Fast response (avg: 45ms < 500ms), threads: 40 -> 41, cooldown: 1845ms
+2026/03/26 11:53:22 engine.go:580: [DEBUG] checkAndAdjustThreads: last=96, avg=69
+2026/03/26 11:53:22 engine.go:624: [*] Fast response (avg: 69ms < 500ms), threads: 41 -> 42, cooldown: 2898ms
+2026/03/26 11:53:24 engine.go:580: [DEBUG] checkAndAdjustThreads: last=58, avg=48
+2026/03/26 11:53:26 engine.go:580: [DEBUG] checkAndAdjustThreads: last=36, avg=36
+2026/03/26 11:53:26 engine.go:624: [*] Fast response (avg: 36ms < 500ms), threads: 42 -> 43, cooldown: 1548ms
+2026/03/26 11:53:28 engine.go:580: [DEBUG] checkAndAdjustThreads: last=209, avg=60
+2026/03/26 11:53:28 engine.go:624: [*] Fast response (avg: 60ms < 500ms), threads: 43 -> 44, cooldown: 2640ms
+2026/03/26 11:53:30 engine.go:580: [DEBUG] checkAndAdjustThreads: last=43, avg=47
+2026/03/26 11:53:30 engine.go:684: [*] Checkpoint saved: 152/740 checks, 74 endpoints
+2026/03/26 11:53:32 engine.go:580: [DEBUG] checkAndAdjustThreads: last=34, avg=35
+2026/03/26 11:53:32 engine.go:624: [*] Fast response (avg: 35ms < 500ms), threads: 44 -> 45, cooldown: 1575ms
+2026/03/26 11:53:34 engine.go:580: [DEBUG] checkAndAdjustThreads: last=42, avg=37
+2026/03/26 11:53:34 engine.go:624: [*] Fast response (avg: 37ms < 500ms), threads: 45 -> 46, cooldown: 1702ms
+2026/03/26 11:53:36 engine.go:580: [DEBUG] checkAndAdjustThreads: last=37, avg=42
+2026/03/26 11:53:36 engine.go:624: [*] Fast response (avg: 42ms < 500ms), threads: 46 -> 47, cooldown: 1974ms
+2026/03/26 11:53:38 engine.go:580: [DEBUG] checkAndAdjustThreads: last=36, avg=36
+2026/03/26 11:53:38 engine.go:624: [*] Fast response (avg: 36ms < 500ms), threads: 47 -> 48, cooldown: 1728ms
+2026/03/26 11:53:40 engine.go:580: [DEBUG] checkAndAdjustThreads: last=38, avg=34
+2026/03/26 11:53:40 engine.go:624: [*] Fast response (avg: 34ms < 500ms), threads: 48 -> 49, cooldown: 1666ms
+2026/03/26 11:53:42 engine.go:580: [DEBUG] checkAndAdjustThreads: last=32, avg=43
+2026/03/26 11:53:42 engine.go:624: [*] Fast response (avg: 43ms < 500ms), threads: 49 -> 50, cooldown: 2150ms
+2026/03/26 11:53:44 engine.go:580: [DEBUG] checkAndAdjustThreads: last=35, avg=35
+2026/03/26 11:53:46 engine.go:580: [DEBUG] checkAndAdjustThreads: last=66, avg=53
+2026/03/26 11:53:46 engine.go:624: [*] Fast response (avg: 53ms < 500ms), threads: 50 -> 51, cooldown: 2703ms
+2026/03/26 11:53:48 engine.go:580: [DEBUG] checkAndAdjustThreads: last=51, avg=65
+2026/03/26 11:53:50 engine.go:580: [DEBUG] checkAndAdjustThreads: last=72, avg=58
+2026/03/26 11:53:50 engine.go:624: [*] Fast response (avg: 58ms < 500ms), threads: 51 -> 52, cooldown: 3016ms
+2026/03/26 11:53:52 engine.go:580: [DEBUG] checkAndAdjustThreads: last=84, avg=75
+2026/03/26 11:53:54 engine.go:580: [DEBUG] checkAndAdjustThreads: last=40, avg=47
+2026/03/26 11:53:54 engine.go:624: [*] Fast response (avg: 47ms < 500ms), threads: 52 -> 53, cooldown: 2491ms
+2026/03/26 11:53:56 engine.go:580: [DEBUG] checkAndAdjustThreads: last=38, avg=43
+2026/03/26 11:53:58 engine.go:580: [DEBUG] checkAndAdjustThreads: last=35, avg=35
+2026/03/26 11:53:58 engine.go:624: [*] Fast response (avg: 35ms < 500ms), threads: 53 -> 54, cooldown: 1890ms
+2026/03/26 11:54:00 engine.go:580: [DEBUG] checkAndAdjustThreads: last=32, avg=40
+2026/03/26 11:54:00 engine.go:624: [*] Fast response (avg: 40ms < 500ms), threads: 54 -> 55, cooldown: 2200ms
+2026/03/26 11:54:00 engine.go:684: [*] Checkpoint saved: 196/740 checks, 74 endpoints
+2026/03/26 11:54:02 engine.go:580: [DEBUG] checkAndAdjustThreads: last=34, avg=34
+2026/03/26 11:54:04 engine.go:580: [DEBUG] checkAndAdjustThreads: last=38, avg=34
+2026/03/26 11:54:04 engine.go:624: [*] Fast response (avg: 34ms < 500ms), threads: 55 -> 56, cooldown: 1904ms
+2026/03/26 11:54:06 engine.go:580: [DEBUG] checkAndAdjustThreads: last=34, avg=46
+2026/03/26 11:54:06 engine.go:624: [*] Fast response (avg: 46ms < 500ms), threads: 56 -> 57, cooldown: 2622ms
+2026/03/26 11:54:08 engine.go:580: [DEBUG] checkAndAdjustThreads: last=145, avg=48
+2026/03/26 11:54:10 engine.go:580: [DEBUG] checkAndAdjustThreads: last=38, avg=58
+2026/03/26 11:54:10 engine.go:624: [*] Fast response (avg: 58ms < 500ms), threads: 57 -> 58, cooldown: 3364ms
+2026/03/26 11:54:12 engine.go:580: [DEBUG] checkAndAdjustThreads: last=38, avg=62
+2026/03/26 11:54:14 engine.go:580: [DEBUG] checkAndAdjustThreads: last=41, avg=76
+2026/03/26 11:54:14 engine.go:624: [*] Fast response (avg: 76ms < 500ms), threads: 58 -> 59, cooldown: 4484ms
+2026/03/26 11:54:16 engine.go:580: [DEBUG] checkAndAdjustThreads: last=40, avg=86
+2026/03/26 11:54:18 engine.go:580: [DEBUG] checkAndAdjustThreads: last=39, avg=86
+2026/03/26 11:54:20 engine.go:580: [DEBUG] checkAndAdjustThreads: last=34, avg=82
+2026/03/26 11:54:20 engine.go:624: [*] Fast response (avg: 82ms < 500ms), threads: 59 -> 60, cooldown: 4920ms
+2026/03/26 11:54:22 engine.go:580: [DEBUG] checkAndAdjustThreads: last=35, avg=35
+2026/03/26 11:54:24 engine.go:580: [DEBUG] checkAndAdjustThreads: last=34, avg=48
+2026/03/26 11:54:26 engine.go:580: [DEBUG] checkAndAdjustThreads: last=35, avg=35
+2026/03/26 11:54:26 engine.go:624: [*] Fast response (avg: 35ms < 500ms), threads: 60 -> 61, cooldown: 2135ms
+2026/03/26 11:54:28 engine.go:580: [DEBUG] checkAndAdjustThreads: last=32, avg=35
+2026/03/26 11:54:30 engine.go:580: [DEBUG] checkAndAdjustThreads: last=99, avg=37
+2026/03/26 11:54:30 engine.go:624: [*] Fast response (avg: 37ms < 500ms), threads: 61 -> 62, cooldown: 2294ms
+2026/03/26 11:54:31 engine.go:684: [*] Checkpoint saved: 221/740 checks, 74 endpoints
+2026/03/26 11:54:32 engine.go:580: [DEBUG] checkAndAdjustThreads: last=32, avg=34
+2026/03/26 11:54:34 engine.go:580: [DEBUG] checkAndAdjustThreads: last=33, avg=34
+2026/03/26 11:54:34 engine.go:624: [*] Fast response (avg: 34ms < 500ms), threads: 62 -> 63, cooldown: 2142ms
+2026/03/26 11:54:36 engine.go:580: [DEBUG] checkAndAdjustThreads: last=37, avg=37
+2026/03/26 11:54:38 engine.go:580: [DEBUG] checkAndAdjustThreads: last=35, avg=39
+2026/03/26 11:54:38 engine.go:624: [*] Fast response (avg: 39ms < 500ms), threads: 63 -> 64, cooldown: 2496ms
+2026/03/26 11:54:40 engine.go:580: [DEBUG] checkAndAdjustThreads: last=38, avg=35
+2026/03/26 11:54:42 engine.go:580: [DEBUG] checkAndAdjustThreads: last=35, avg=35
+2026/03/26 11:54:42 engine.go:624: [*] Fast response (avg: 35ms < 500ms), threads: 64 -> 65, cooldown: 2275ms
+2026/03/26 11:54:44 engine.go:580: [DEBUG] checkAndAdjustThreads: last=38, avg=35
+2026/03/26 11:54:46 engine.go:580: [DEBUG] checkAndAdjustThreads: last=36, avg=36
+2026/03/26 11:54:46 engine.go:624: [*] Fast response (avg: 36ms < 500ms), threads: 65 -> 66, cooldown: 2376ms
+2026/03/26 11:54:48 engine.go:580: [DEBUG] checkAndAdjustThreads: last=39, avg=35
+2026/03/26 11:54:50 engine.go:580: [DEBUG] checkAndAdjustThreads: last=35, avg=36
+2026/03/26 11:54:50 engine.go:624: [*] Fast response (avg: 36ms < 500ms), threads: 66 -> 67, cooldown: 2412ms
+2026/03/26 11:54:52 engine.go:580: [DEBUG] checkAndAdjustThreads: last=49, avg=54
+2026/03/26 11:54:54 engine.go:580: [DEBUG] checkAndAdjustThreads: last=35, avg=35
+2026/03/26 11:54:54 engine.go:624: [*] Fast response (avg: 35ms < 500ms), threads: 67 -> 68, cooldown: 2380ms
+2026/03/26 11:54:56 engine.go:580: [DEBUG] checkAndAdjustThreads: last=36, avg=92
+2026/03/26 11:54:58 engine.go:580: [DEBUG] checkAndAdjustThreads: last=34, avg=38
+2026/03/26 11:54:58 engine.go:624: [*] Fast response (avg: 38ms < 500ms), threads: 68 -> 69, cooldown: 2622ms
+2026/03/26 11:55:00 engine.go:580: [DEBUG] checkAndAdjustThreads: last=32, avg=43
+2026/03/26 11:55:01 engine.go:684: [*] Checkpoint saved: 256/740 checks, 74 endpoints
+2026/03/26 11:55:02 engine.go:580: [DEBUG] checkAndAdjustThreads: last=38, avg=37
+2026/03/26 11:55:02 engine.go:624: [*] Fast response (avg: 37ms < 500ms), threads: 69 -> 70, cooldown: 2590ms
+2026/03/26 11:55:04 engine.go:580: [DEBUG] checkAndAdjustThreads: last=34, avg=35
+2026/03/26 11:55:06 engine.go:580: [DEBUG] checkAndAdjustThreads: last=127, avg=70
+2026/03/26 11:55:06 engine.go:624: [*] Fast response (avg: 70ms < 500ms), threads: 70 -> 71, cooldown: 4970ms
+2026/03/26 11:55:08 engine.go:580: [DEBUG] checkAndAdjustThreads: last=51, avg=45
+2026/03/26 11:55:10 engine.go:580: [DEBUG] checkAndAdjustThreads: last=48, avg=48
+2026/03/26 11:55:12 engine.go:580: [DEBUG] checkAndAdjustThreads: last=65, avg=46
+2026/03/26 11:55:12 engine.go:624: [*] Fast response (avg: 46ms < 500ms), threads: 71 -> 72, cooldown: 3312ms
+2026/03/26 11:55:14 engine.go:580: [DEBUG] checkAndAdjustThreads: last=71, avg=70
+2026/03/26 11:55:16 engine.go:580: [DEBUG] checkAndAdjustThreads: last=81, avg=55
+2026/03/26 11:55:16 engine.go:624: [*] Fast response (avg: 55ms < 500ms), threads: 72 -> 73, cooldown: 4015ms
+2026/03/26 11:55:18 engine.go:580: [DEBUG] checkAndAdjustThreads: last=76, avg=72
+2026/03/26 11:55:20 engine.go:580: [DEBUG] checkAndAdjustThreads: last=39, avg=48
+2026/03/26 11:55:22 engine.go:580: [DEBUG] checkAndAdjustThreads: last=32, avg=46
+2026/03/26 11:55:22 engine.go:624: [*] Fast response (avg: 46ms < 500ms), threads: 73 -> 74, cooldown: 3404ms
+2026/03/26 11:55:24 engine.go:580: [DEBUG] checkAndAdjustThreads: last=35, avg=34
+2026/03/26 11:55:26 engine.go:580: [DEBUG] checkAndAdjustThreads: last=131, avg=49
+2026/03/26 11:55:26 engine.go:624: [*] Fast response (avg: 49ms < 500ms), threads: 74 -> 75, cooldown: 3675ms
+2026/03/26 11:55:28 engine.go:580: [DEBUG] checkAndAdjustThreads: last=35, avg=86
+2026/03/26 11:55:30 engine.go:580: [DEBUG] checkAndAdjustThreads: last=40, avg=37
+2026/03/26 11:55:30 engine.go:624: [*] Fast response (avg: 37ms < 500ms), threads: 75 -> 76, cooldown: 2812ms
+2026/03/26 11:55:31 engine.go:684: [*] Checkpoint saved: 293/740 checks, 74 endpoints
+2026/03/26 11:55:32 engine.go:580: [DEBUG] checkAndAdjustThreads: last=61, avg=72
+2026/03/26 11:55:34 engine.go:580: [DEBUG] checkAndAdjustThreads: last=51, avg=56
+2026/03/26 11:55:34 engine.go:624: [*] Fast response (avg: 56ms < 500ms), threads: 76 -> 77, cooldown: 4312ms
+2026/03/26 11:55:36 engine.go:580: [DEBUG] checkAndAdjustThreads: last=185, avg=66
+2026/03/26 11:55:38 engine.go:580: [DEBUG] checkAndAdjustThreads: last=36, avg=113
+2026/03/26 11:55:40 engine.go:580: [DEBUG] checkAndAdjustThreads: last=38, avg=36
+2026/03/26 11:55:40 engine.go:624: [*] Fast response (avg: 36ms < 500ms), threads: 77 -> 78, cooldown: 2808ms
+2026/03/26 11:55:42 engine.go:580: [DEBUG] checkAndAdjustThreads: last=169, avg=71
+2026/03/26 11:55:44 engine.go:580: [DEBUG] checkAndAdjustThreads: last=36, avg=37
+2026/03/26 11:55:44 engine.go:624: [*] Fast response (avg: 37ms < 500ms), threads: 78 -> 79, cooldown: 2923ms
+2026/03/26 11:55:46 engine.go:580: [DEBUG] checkAndAdjustThreads: last=33, avg=43
+2026/03/26 11:55:48 engine.go:580: [DEBUG] checkAndAdjustThreads: last=33, avg=35
+2026/03/26 11:55:48 engine.go:624: [*] Fast response (avg: 35ms < 500ms), threads: 79 -> 80, cooldown: 2800ms
+2026/03/26 11:55:50 engine.go:580: [DEBUG] checkAndAdjustThreads: last=47, avg=53
+2026/03/26 11:55:52 engine.go:580: [DEBUG] checkAndAdjustThreads: last=29, avg=34
+2026/03/26 11:55:52 engine.go:624: [*] Fast response (avg: 34ms < 500ms), threads: 80 -> 81, cooldown: 2754ms
+2026/03/26 11:55:54 engine.go:580: [DEBUG] checkAndAdjustThreads: last=36, avg=35
+2026/03/26 11:55:56 engine.go:580: [DEBUG] checkAndAdjustThreads: last=37, avg=36
+2026/03/26 11:55:56 engine.go:624: [*] Fast response (avg: 36ms < 500ms), threads: 81 -> 82, cooldown: 2952ms
+2026/03/26 11:55:58 engine.go:580: [DEBUG] checkAndAdjustThreads: last=181, avg=46
+2026/03/26 11:56:00 engine.go:580: [DEBUG] checkAndAdjustThreads: last=38, avg=35
+2026/03/26 11:56:00 engine.go:624: [*] Fast response (avg: 35ms < 500ms), threads: 82 -> 83, cooldown: 2905ms
+2026/03/26 11:56:01 engine.go:684: [*] Checkpoint saved: 337/740 checks, 74 endpoints
+2026/03/26 11:56:02 engine.go:580: [DEBUG] checkAndAdjustThreads: last=47, avg=46
+2026/03/26 11:56:04 engine.go:580: [DEBUG] checkAndAdjustThreads: last=48, avg=46
+2026/03/26 11:56:04 engine.go:624: [*] Fast response (avg: 46ms < 500ms), threads: 83 -> 84, cooldown: 3864ms
+2026/03/26 11:56:06 engine.go:580: [DEBUG] checkAndAdjustThreads: last=36, avg=35
+2026/03/26 11:56:08 engine.go:580: [DEBUG] checkAndAdjustThreads: last=36, avg=35
+2026/03/26 11:56:08 engine.go:624: [*] Fast response (avg: 35ms < 500ms), threads: 84 -> 85, cooldown: 2975ms
+2026/03/26 11:56:10 engine.go:580: [DEBUG] checkAndAdjustThreads: last=31, avg=36
+2026/03/26 11:56:12 engine.go:580: [DEBUG] checkAndAdjustThreads: last=38, avg=40
+2026/03/26 11:56:12 engine.go:624: [*] Fast response (avg: 40ms < 500ms), threads: 85 -> 86, cooldown: 3440ms
+2026/03/26 11:56:14 engine.go:580: [DEBUG] checkAndAdjustThreads: last=37, avg=34
+2026/03/26 11:56:16 engine.go:580: [DEBUG] checkAndAdjustThreads: last=34, avg=37
+2026/03/26 11:56:16 engine.go:624: [*] Fast response (avg: 37ms < 500ms), threads: 86 -> 87, cooldown: 3219ms
+2026/03/26 11:56:18 engine.go:580: [DEBUG] checkAndAdjustThreads: last=35, avg=34
+2026/03/26 11:56:20 engine.go:580: [DEBUG] checkAndAdjustThreads: last=37, avg=37
+2026/03/26 11:56:20 engine.go:624: [*] Fast response (avg: 37ms < 500ms), threads: 87 -> 88, cooldown: 3256ms
+2026/03/26 11:56:22 engine.go:580: [DEBUG] checkAndAdjustThreads: last=34, avg=35
+2026/03/26 11:56:24 engine.go:580: [DEBUG] checkAndAdjustThreads: last=78, avg=53
+2026/03/26 11:56:24 engine.go:624: [*] Fast response (avg: 53ms < 500ms), threads: 88 -> 89, cooldown: 4717ms
+2026/03/26 11:56:26 engine.go:580: [DEBUG] checkAndAdjustThreads: last=36, avg=45
+2026/03/26 11:56:28 engine.go:580: [DEBUG] checkAndAdjustThreads: last=33, avg=44
+2026/03/26 11:56:30 engine.go:580: [DEBUG] checkAndAdjustThreads: last=33, avg=42
+2026/03/26 11:56:30 engine.go:624: [*] Fast response (avg: 42ms < 500ms), threads: 89 -> 90, cooldown: 3780ms
+2026/03/26 11:56:31 engine.go:684: [*] Checkpoint saved: 383/740 checks, 74 endpoints
+2026/03/26 11:56:32 engine.go:580: [DEBUG] checkAndAdjustThreads: last=38, avg=36
+2026/03/26 11:56:34 engine.go:580: [DEBUG] checkAndAdjustThreads: last=34, avg=35
+2026/03/26 11:56:34 engine.go:624: [*] Fast response (avg: 35ms < 500ms), threads: 90 -> 91, cooldown: 3185ms
+2026/03/26 11:56:36 engine.go:580: [DEBUG] checkAndAdjustThreads: last=34, avg=35
+2026/03/26 11:56:38 engine.go:580: [DEBUG] checkAndAdjustThreads: last=34, avg=35
+2026/03/26 11:56:38 engine.go:624: [*] Fast response (avg: 35ms < 500ms), threads: 91 -> 92, cooldown: 3220ms
+2026/03/26 11:56:40 engine.go:580: [DEBUG] checkAndAdjustThreads: last=37, avg=46
+2026/03/26 11:56:42 engine.go:580: [DEBUG] checkAndAdjustThreads: last=39, avg=50
+2026/03/26 11:56:42 engine.go:624: [*] Fast response (avg: 50ms < 500ms), threads: 92 -> 93, cooldown: 4650ms
+2026/03/26 11:56:44 engine.go:580: [DEBUG] checkAndAdjustThreads: last=90, avg=90
+2026/03/26 11:56:46 engine.go:580: [DEBUG] checkAndAdjustThreads: last=49, avg=60
+2026/03/26 11:56:48 engine.go:580: [DEBUG] checkAndAdjustThreads: last=36, avg=37
+2026/03/26 11:56:48 engine.go:624: [*] Fast response (avg: 37ms < 500ms), threads: 93 -> 94, cooldown: 3478ms
+2026/03/26 11:56:50 engine.go:580: [DEBUG] checkAndAdjustThreads: last=39, avg=36
+2026/03/26 11:56:52 engine.go:580: [DEBUG] checkAndAdjustThreads: last=73, avg=69
+2026/03/26 11:56:52 engine.go:624: [*] Fast response (avg: 69ms < 500ms), threads: 94 -> 95, cooldown: 6555ms
+2026/03/26 11:56:54 engine.go:580: [DEBUG] checkAndAdjustThreads: last=46, avg=58
+2026/03/26 11:56:56 engine.go:580: [DEBUG] checkAndAdjustThreads: last=40, avg=38
+2026/03/26 11:56:58 engine.go:580: [DEBUG] checkAndAdjustThreads: last=69, avg=69
+2026/03/26 11:57:00 engine.go:580: [DEBUG] checkAndAdjustThreads: last=52, avg=48
+2026/03/26 11:57:00 engine.go:624: [*] Fast response (avg: 48ms < 500ms), threads: 95 -> 96, cooldown: 4608ms
+2026/03/26 11:57:01 engine.go:684: [*] Checkpoint saved: 419/740 checks, 74 endpoints
+2026/03/26 11:57:02 engine.go:580: [DEBUG] checkAndAdjustThreads: last=37, avg=38
+2026/03/26 11:57:04 engine.go:580: [DEBUG] checkAndAdjustThreads: last=33, avg=39
+2026/03/26 11:57:06 engine.go:580: [DEBUG] checkAndAdjustThreads: last=36, avg=43
+2026/03/26 11:57:06 engine.go:624: [*] Fast response (avg: 43ms < 500ms), threads: 96 -> 97, cooldown: 4171ms
+2026/03/26 11:57:08 engine.go:580: [DEBUG] checkAndAdjustThreads: last=36, avg=48
+2026/03/26 11:57:10 engine.go:580: [DEBUG] checkAndAdjustThreads: last=34, avg=54
+2026/03/26 11:57:12 engine.go:580: [DEBUG] checkAndAdjustThreads: last=34, avg=35
+2026/03/26 11:57:12 engine.go:624: [*] Fast response (avg: 35ms < 500ms), threads: 97 -> 98, cooldown: 3430ms
+2026/03/26 11:57:14 engine.go:580: [DEBUG] checkAndAdjustThreads: last=31, avg=34
+2026/03/26 11:57:16 engine.go:580: [DEBUG] checkAndAdjustThreads: last=45, avg=38
+2026/03/26 11:57:16 engine.go:624: [*] Fast response (avg: 38ms < 500ms), threads: 98 -> 99, cooldown: 3762ms
+2026/03/26 11:57:18 engine.go:580: [DEBUG] checkAndAdjustThreads: last=34, avg=38
+2026/03/26 11:57:20 engine.go:580: [DEBUG] checkAndAdjustThreads: last=37, avg=35
+2026/03/26 11:57:20 engine.go:624: [*] Fast response (avg: 35ms < 500ms), threads: 99 -> 100, cooldown: 3500ms
+2026/03/26 11:57:22 engine.go:580: [DEBUG] checkAndAdjustThreads: last=32, avg=45
+2026/03/26 11:57:24 engine.go:580: [DEBUG] checkAndAdjustThreads: last=33, avg=35
+2026/03/26 11:57:26 engine.go:580: [DEBUG] checkAndAdjustThreads: last=37, avg=47
+2026/03/26 11:57:28 engine.go:580: [DEBUG] checkAndAdjustThreads: last=47, avg=58
+2026/03/26 11:57:30 engine.go:580: [DEBUG] checkAndAdjustThreads: last=35, avg=47
+2026/03/26 11:57:31 engine.go:684: [*] Checkpoint saved: 481/740 checks, 74 endpoints
+2026/03/26 11:57:32 engine.go:580: [DEBUG] checkAndAdjustThreads: last=37, avg=35
+2026/03/26 11:57:34 engine.go:580: [DEBUG] checkAndAdjustThreads: last=36, avg=35
+2026/03/26 11:57:36 engine.go:580: [DEBUG] checkAndAdjustThreads: last=36, avg=36
+2026/03/26 11:57:38 engine.go:580: [DEBUG] checkAndAdjustThreads: last=34, avg=35
+2026/03/26 11:57:40 engine.go:580: [DEBUG] checkAndAdjustThreads: last=33, avg=35
+2026/03/26 11:57:42 engine.go:580: [DEBUG] checkAndAdjustThreads: last=37, avg=37
+2026/03/26 11:57:44 engine.go:580: [DEBUG] checkAndAdjustThreads: last=46, avg=38
+2026/03/26 11:57:46 engine.go:580: [DEBUG] checkAndAdjustThreads: last=90, avg=71
+2026/03/26 11:57:48 engine.go:580: [DEBUG] checkAndAdjustThreads: last=33, avg=34
+2026/03/26 11:57:50 engine.go:580: [DEBUG] checkAndAdjustThreads: last=46, avg=50
+2026/03/26 11:57:52 engine.go:580: [DEBUG] checkAndAdjustThreads: last=77, avg=67
+2026/03/26 11:57:54 engine.go:580: [DEBUG] checkAndAdjustThreads: last=53, avg=55
+2026/03/26 11:57:56 engine.go:580: [DEBUG] checkAndAdjustThreads: last=63, avg=41
+2026/03/26 11:57:58 engine.go:580: [DEBUG] checkAndAdjustThreads: last=35, avg=62
+2026/03/26 11:58:00 engine.go:580: [DEBUG] checkAndAdjustThreads: last=38, avg=34
+2026/03/26 11:58:01 engine.go:684: [*] Checkpoint saved: 494/740 checks, 74 endpoints
+2026/03/26 11:58:02 engine.go:580: [DEBUG] checkAndAdjustThreads: last=34, avg=37
+2026/03/26 11:58:04 engine.go:580: [DEBUG] checkAndAdjustThreads: last=31, avg=34
+2026/03/26 11:58:06 engine.go:580: [DEBUG] checkAndAdjustThreads: last=34, avg=35
+2026/03/26 11:58:08 engine.go:580: [DEBUG] checkAndAdjustThreads: last=33, avg=34
+2026/03/26 11:58:10 engine.go:580: [DEBUG] checkAndAdjustThreads: last=33, avg=34
+2026/03/26 11:58:12 engine.go:580: [DEBUG] checkAndAdjustThreads: last=34, avg=35
+2026/03/26 11:58:14 engine.go:580: [DEBUG] checkAndAdjustThreads: last=35, avg=34
+2026/03/26 11:58:16 engine.go:580: [DEBUG] checkAndAdjustThreads: last=33, avg=72
+2026/03/26 11:58:18 engine.go:580: [DEBUG] checkAndAdjustThreads: last=40, avg=35
+2026/03/26 11:58:20 engine.go:580: [DEBUG] checkAndAdjustThreads: last=75, avg=45
+2026/03/26 11:58:22 engine.go:580: [DEBUG] checkAndAdjustThreads: last=38, avg=46
+2026/03/26 11:58:24 engine.go:580: [DEBUG] checkAndAdjustThreads: last=33, avg=34
+2026/03/26 11:58:26 engine.go:580: [DEBUG] checkAndAdjustThreads: last=38, avg=54
+2026/03/26 11:58:28 engine.go:580: [DEBUG] checkAndAdjustThreads: last=34, avg=35
+2026/03/26 11:58:30 engine.go:580: [DEBUG] checkAndAdjustThreads: last=31, avg=35
+2026/03/26 11:58:31 engine.go:684: [*] Checkpoint saved: 541/740 checks, 74 endpoints
+2026/03/26 11:58:32 engine.go:580: [DEBUG] checkAndAdjustThreads: last=33, avg=34
+2026/03/26 11:58:34 engine.go:580: [DEBUG] checkAndAdjustThreads: last=34, avg=35
+2026/03/26 11:58:36 engine.go:580: [DEBUG] checkAndAdjustThreads: last=37, avg=42
+2026/03/26 11:58:38 engine.go:580: [DEBUG] checkAndAdjustThreads: last=37, avg=35
+2026/03/26 11:58:40 engine.go:580: [DEBUG] checkAndAdjustThreads: last=33, avg=34
+2026/03/26 11:58:42 engine.go:580: [DEBUG] checkAndAdjustThreads: last=32, avg=35
+2026/03/26 11:58:44 engine.go:580: [DEBUG] checkAndAdjustThreads: last=36, avg=35
+2026/03/26 11:58:46 engine.go:580: [DEBUG] checkAndAdjustThreads: last=38, avg=36
+2026/03/26 11:58:48 engine.go:580: [DEBUG] checkAndAdjustThreads: last=71, avg=37
+2026/03/26 11:58:50 engine.go:580: [DEBUG] checkAndAdjustThreads: last=96, avg=83
+2026/03/26 11:58:52 engine.go:580: [DEBUG] checkAndAdjustThreads: last=91, avg=89
+2026/03/26 11:58:54 engine.go:580: [DEBUG] checkAndAdjustThreads: last=95, avg=91
+2026/03/26 11:58:56 engine.go:580: [DEBUG] checkAndAdjustThreads: last=35, avg=35
+2026/03/26 11:58:58 engine.go:580: [DEBUG] checkAndAdjustThreads: last=105, avg=82
+2026/03/26 11:59:00 engine.go:580: [DEBUG] checkAndAdjustThreads: last=39, avg=107
+2026/03/26 11:59:01 engine.go:684: [*] Checkpoint saved: 581/740 checks, 74 endpoints
+2026/03/26 11:59:02 engine.go:580: [DEBUG] checkAndAdjustThreads: last=38, avg=36
+2026/03/26 11:59:04 engine.go:580: [DEBUG] checkAndAdjustThreads: last=75, avg=36
+2026/03/26 11:59:06 engine.go:580: [DEBUG] checkAndAdjustThreads: last=31, avg=34
+2026/03/26 11:59:08 engine.go:580: [DEBUG] checkAndAdjustThreads: last=34, avg=67
+2026/03/26 11:59:10 engine.go:580: [DEBUG] checkAndAdjustThreads: last=49, avg=52
+2026/03/26 11:59:12 engine.go:580: [DEBUG] checkAndAdjustThreads: last=36, avg=40
+2026/03/26 11:59:14 engine.go:580: [DEBUG] checkAndAdjustThreads: last=39, avg=37
+2026/03/26 11:59:16 engine.go:580: [DEBUG] checkAndAdjustThreads: last=146, avg=64
+2026/03/26 11:59:18 engine.go:580: [DEBUG] checkAndAdjustThreads: last=54, avg=102
+2026/03/26 11:59:20 engine.go:580: [DEBUG] checkAndAdjustThreads: last=34, avg=42
+2026/03/26 11:59:22 engine.go:580: [DEBUG] checkAndAdjustThreads: last=70, avg=65
+2026/03/26 11:59:24 engine.go:580: [DEBUG] checkAndAdjustThreads: last=53, avg=49
+2026/03/26 11:59:26 engine.go:580: [DEBUG] checkAndAdjustThreads: last=69, avg=69
+2026/03/26 11:59:28 engine.go:580: [DEBUG] checkAndAdjustThreads: last=48, avg=52
+2026/03/26 11:59:30 engine.go:580: [DEBUG] checkAndAdjustThreads: last=90, avg=48
+2026/03/26 11:59:31 engine.go:684: [*] Checkpoint saved: 609/740 checks, 74 endpoints
+2026/03/26 11:59:32 engine.go:580: [DEBUG] checkAndAdjustThreads: last=46, avg=49
+2026/03/26 11:59:34 engine.go:580: [DEBUG] checkAndAdjustThreads: last=35, avg=35
+2026/03/26 11:59:36 engine.go:580: [DEBUG] checkAndAdjustThreads: last=37, avg=42
+2026/03/26 11:59:38 engine.go:580: [DEBUG] checkAndAdjustThreads: last=39, avg=49
+2026/03/26 11:59:40 engine.go:580: [DEBUG] checkAndAdjustThreads: last=35, avg=34
+2026/03/26 11:59:42 engine.go:580: [DEBUG] checkAndAdjustThreads: last=136, avg=41
+2026/03/26 11:59:44 engine.go:580: [DEBUG] checkAndAdjustThreads: last=36, avg=106
+2026/03/26 11:59:46 engine.go:580: [DEBUG] checkAndAdjustThreads: last=143, avg=117
+2026/03/26 11:59:48 engine.go:580: [DEBUG] checkAndAdjustThreads: last=33, avg=35
+2026/03/26 11:59:50 engine.go:580: [DEBUG] checkAndAdjustThreads: last=36, avg=35
+2026/03/26 11:59:52 engine.go:580: [DEBUG] checkAndAdjustThreads: last=35, avg=45
+2026/03/26 11:59:54 engine.go:580: [DEBUG] checkAndAdjustThreads: last=39, avg=42
+2026/03/26 11:59:56 engine.go:580: [DEBUG] checkAndAdjustThreads: last=49, avg=48
+2026/03/26 11:59:58 engine.go:580: [DEBUG] checkAndAdjustThreads: last=50, avg=49
+2026/03/26 12:00:00 engine.go:580: [DEBUG] checkAndAdjustThreads: last=52, avg=48
+2026/03/26 12:00:01 engine.go:684: [*] Checkpoint saved: 652/740 checks, 74 endpoints
+2026/03/26 12:00:02 engine.go:580: [DEBUG] checkAndAdjustThreads: last=51, avg=47
+2026/03/26 12:00:04 engine.go:580: [DEBUG] checkAndAdjustThreads: last=47, avg=48
+2026/03/26 12:00:06 engine.go:580: [DEBUG] checkAndAdjustThreads: last=46, avg=48
+2026/03/26 12:00:08 engine.go:580: [DEBUG] checkAndAdjustThreads: last=51, avg=48
+2026/03/26 12:00:10 engine.go:580: [DEBUG] checkAndAdjustThreads: last=34, avg=43
+2026/03/26 12:00:12 engine.go:580: [DEBUG] checkAndAdjustThreads: last=33, avg=51
+2026/03/26 12:00:14 engine.go:580: [DEBUG] checkAndAdjustThreads: last=195, avg=82
+2026/03/26 12:00:16 engine.go:580: [DEBUG] checkAndAdjustThreads: last=33, avg=34
+2026/03/26 12:00:18 engine.go:580: [DEBUG] checkAndAdjustThreads: last=35, avg=37
+2026/03/26 12:00:20 engine.go:580: [DEBUG] checkAndAdjustThreads: last=34, avg=34
+2026/03/26 12:00:22 engine.go:580: [DEBUG] checkAndAdjustThreads: last=73, avg=39
+2026/03/26 12:00:24 engine.go:580: [DEBUG] checkAndAdjustThreads: last=34, avg=36
+2026/03/26 12:00:26 engine.go:580: [DEBUG] checkAndAdjustThreads: last=37, avg=36
+2026/03/26 12:00:28 engine.go:580: [DEBUG] checkAndAdjustThreads: last=37, avg=42
+2026/03/26 12:00:30 engine.go:580: [DEBUG] checkAndAdjustThreads: last=39, avg=40
+2026/03/26 12:00:31 engine.go:684: [*] Checkpoint saved: 686/740 checks, 74 endpoints
+2026/03/26 12:00:32 engine.go:580: [DEBUG] checkAndAdjustThreads: last=68, avg=71
+2026/03/26 12:00:34 engine.go:580: [DEBUG] checkAndAdjustThreads: last=50, avg=52
+2026/03/26 12:00:36 engine.go:580: [DEBUG] checkAndAdjustThreads: last=75, avg=69
+2026/03/26 12:00:38 engine.go:580: [DEBUG] checkAndAdjustThreads: last=51, avg=57
+2026/03/26 12:00:40 engine.go:580: [DEBUG] checkAndAdjustThreads: last=41, avg=39
+2026/03/26 12:00:42 engine.go:580: [DEBUG] checkAndAdjustThreads: last=84, avg=74
+2026/03/26 12:00:44 engine.go:580: [DEBUG] checkAndAdjustThreads: last=50, avg=51
+2026/03/26 12:00:46 engine.go:580: [DEBUG] checkAndAdjustThreads: last=73, avg=77
+2026/03/26 12:00:48 engine.go:580: [DEBUG] checkAndAdjustThreads: last=48, avg=53
+2026/03/26 12:00:50 engine.go:580: [DEBUG] checkAndAdjustThreads: last=33, avg=35
+2026/03/26 12:00:52 engine.go:580: [DEBUG] checkAndAdjustThreads: last=35, avg=36
+2026/03/26 12:00:54 engine.go:580: [DEBUG] checkAndAdjustThreads: last=37, avg=69
+2026/03/26 12:00:56 engine.go:580: [DEBUG] checkAndAdjustThreads: last=39, avg=35
+2026/03/26 12:00:58 engine.go:580: [DEBUG] checkAndAdjustThreads: last=33, avg=36
+2026/03/26 12:01:00 engine.go:580: [DEBUG] checkAndAdjustThreads: last=36, avg=46
+2026/03/26 12:01:01 engine.go:684: [*] Checkpoint saved: 704/740 checks, 74 endpoints
+2026/03/26 12:01:02 engine.go:580: [DEBUG] checkAndAdjustThreads: last=37, avg=46
+2026/03/26 12:01:04 engine.go:580: [DEBUG] checkAndAdjustThreads: last=39, avg=35
+2026/03/26 12:01:06 engine.go:580: [DEBUG] checkAndAdjustThreads: last=39, avg=52
+2026/03/26 12:01:08 engine.go:580: [DEBUG] checkAndAdjustThreads: last=40, avg=36
+2026/03/26 12:01:10 engine.go:580: [DEBUG] checkAndAdjustThreads: last=37, avg=42
+2026/03/26 12:01:12 engine.go:580: [DEBUG] checkAndAdjustThreads: last=36, avg=35
+2026/03/26 12:01:14 engine.go:580: [DEBUG] checkAndAdjustThreads: last=33, avg=49
+2026/03/26 12:01:16 engine.go:580: [DEBUG] checkAndAdjustThreads: last=37, avg=35
+2026/03/26 12:01:18 engine.go:580: [DEBUG] checkAndAdjustThreads: last=33, avg=35
+2026/03/26 12:01:20 engine.go:580: [DEBUG] checkAndAdjustThreads: last=139, avg=88
+2026/03/26 12:01:22 engine.go:580: [DEBUG] checkAndAdjustThreads: last=36, avg=47
+2026/03/26 12:01:24 engine.go:580: [DEBUG] checkAndAdjustThreads: last=35, avg=35
+2026/03/26 12:01:26 engine.go:580: [DEBUG] checkAndAdjustThreads: last=32, avg=34
+2026/03/26 12:01:28 engine.go:580: [DEBUG] checkAndAdjustThreads: last=35, avg=35
+2026/03/26 12:01:30 engine.go:580: [DEBUG] checkAndAdjustThreads: last=37, avg=35
+2026/03/26 12:01:31 engine.go:684: [*] Checkpoint saved: 727/740 checks, 74 endpoints
+2026/03/26 12:01:32 engine.go:580: [DEBUG] checkAndAdjustThreads: last=38, avg=33
+2026/03/26 12:01:34 engine.go:580: [DEBUG] checkAndAdjustThreads: last=39, avg=35
+2026/03/26 12:01:36 engine.go:580: [DEBUG] checkAndAdjustThreads: last=32, avg=35
+2026/03/26 12:01:38 engine.go:580: [DEBUG] checkAndAdjustThreads: last=129, avg=38
+2026/03/26 12:01:40 engine.go:580: [DEBUG] checkAndAdjustThreads: last=132, avg=54

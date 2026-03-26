@@ -456,7 +456,8 @@ func DeduplicateEndpoints(endpoints []Endpoint) []Endpoint {
 	result := make([]Endpoint, 0, len(endpoints))
 
 	for _, ep := range endpoints {
-		if IsStaticResource(ep.URL) {
+		normalized := NormalizeURL(ep.URL)
+		if IsStaticResource(normalized) {
 			continue
 		}
 
@@ -469,7 +470,6 @@ func DeduplicateEndpoints(endpoints []Endpoint) []Endpoint {
 			continue
 		}
 
-		normalized := NormalizeURL(ep.URL)
 		key := ep.Method + ":" + normalized
 
 		if !seen[key] {

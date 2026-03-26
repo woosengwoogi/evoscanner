@@ -1,0 +1,34 @@
+2026/03/26 12:48:38 crawler.go:355: [*] EMA: 211.0ms, delay: 250ms
+2026/03/26 12:48:38 crawler.go:355: [*] EMA: 175.6ms, delay: 250ms
+2026/03/26 12:48:38 crawler.go:355: [*] EMA: 148.1ms, delay: 250ms
+2026/03/26 12:48:39 crawler.go:355: [*] EMA: 125.7ms, delay: 250ms
+2026/03/26 12:48:39 crawler.go:355: [*] EMA: 108.3ms, delay: 250ms
+2026/03/26 12:48:39 crawler.go:355: [*] EMA: 94.3ms, delay: 250ms
+2026/03/26 12:48:39 crawler.go:355: [*] EMA: 82.4ms, delay: 250ms
+2026/03/26 12:48:40 crawler.go:355: [*] EMA: 73.1ms, delay: 250ms
+2026/03/26 12:48:40 crawler.go:355: [*] EMA: 66.1ms, delay: 250ms
+2026/03/26 12:48:40 crawler.go:355: [*] EMA: 60.3ms, delay: 250ms
+2026/03/26 12:48:41 crawler.go:355: [*] EMA: 55.8ms, delay: 250ms
+2026/03/26 12:48:41 crawler.go:355: [*] EMA: 52.9ms, delay: 250ms
+2026/03/26 12:48:41 crawler.go:355: [*] EMA: 73.5ms, delay: 250ms
+2026/03/26 12:48:42 crawler.go:355: [*] EMA: 82.4ms, delay: 250ms
+2026/03/26 12:48:42 crawler.go:355: [*] EMA: 106.3ms, delay: 250ms
+2026/03/26 12:48:43 crawler.go:355: [*] EMA: 114.9ms, delay: 250ms
+2026/03/26 12:48:43 crawler.go:355: [*] EMA: 120.7ms, delay: 200ms
+2026/03/26 12:48:43 crawler.go:355: [*] EMA: 117.1ms, delay: 200ms
+2026/03/26 12:48:44 crawler.go:355: [*] EMA: 103.9ms, delay: 200ms
+2026/03/26 12:48:44 crawler.go:355: [*] EMA: 92.7ms, delay: 200ms
+2026/03/26 12:48:44 crawler.go:355: [*] EMA: 111.4ms, delay: 200ms
+2026/03/26 12:48:45 crawler.go:355: [*] EMA: 98.3ms, delay: 200ms
+2026/03/26 12:48:45 crawler.go:355: [*] EMA: 114.0ms, delay: 200ms
+2026/03/26 12:48:46 crawler.go:355: [*] EMA: 118.6ms, delay: 200ms
+2026/03/26 12:48:46 crawler.go:355: [*] EMA: 103.9ms, delay: 200ms
+2026/03/26 12:48:47 crawler.go:355: [*] EMA: 106.7ms, delay: 200ms
+2026/03/26 12:48:47 crawler.go:355: [*] EMA: 95.4ms, delay: 200ms
+2026/03/26 12:48:47 crawler.go:355: [*] EMA: 96.3ms, delay: 200ms
+2026/03/26 12:48:48 crawler.go:355: [*] EMA: 86.2ms, delay: 200ms
+2026/03/26 12:48:48 crawler.go:102: [*] Crawl complete: 77 URLs, 82 endpoints (10.3s)
+2026/03/26 12:48:51 engine.go:580: [DEBUG] checkAndAdjustThreads: last=35, avg=36
+2026/03/26 12:48:51 engine.go:624: [*] Fast response (avg: 36ms < 500ms), threads: 1 -> 2, cooldown: 72ms
+2026/03/26 12:48:53 engine.go:580: [DEBUG] checkAndAdjustThreads: last=39, avg=79
+2026/03/26 12:48:53 engine.go:624: [*] Fast response (avg: 79ms < 500ms), threads: 2 -> 3, cooldown: 237ms
