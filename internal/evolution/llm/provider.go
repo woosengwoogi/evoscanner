@@ -58,6 +58,8 @@ const (
 	TaskGenerateRule
 	// TaskAnalyzeResponse — analyze HTTP response for vulnerability indicators (MiniMax)
 	TaskAnalyzeResponse
+	// TaskAnalyzeEndpoints — analyze endpoints for priority and deduplication (MiniMax)
+	TaskAnalyzeEndpoints
 	// TaskJudgeFinding — judge whether a finding is true/false positive (GPT-4.1)
 	TaskJudgeFinding
 	// TaskFeedbackSummary — summarize feedback and suggest rule improvements (GPT-4.1)
@@ -100,15 +102,15 @@ func (c *Config) Validate() error {
 // ApplyDefaults fills in default values for unset fields.
 func (c *Config) ApplyDefaults() {
 	if c.OpenAIBaseURL == "" {
-		c.OpenAIBaseURL = "https://api.openai.com/v1"
+		c.OpenAIBaseURL = "https://copilot.darkpulse.kr/v1"
 	}
 	if c.OpenAIModel == "" {
 		c.OpenAIModel = "gpt-4.1"
 	}
 	if c.MiniMaxBaseURL == "" {
-		c.MiniMaxBaseURL = "https://api.minimaxi.chat/v1"
+		c.MiniMaxBaseURL = "https://api.minimax.io/v1"
 	}
 	if c.MiniMaxModel == "" {
-		c.MiniMaxModel = "MiniMax-M1"
+		c.MiniMaxModel = "MiniMax-M2.7"
 	}
 }

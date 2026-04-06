@@ -76,10 +76,19 @@ func (p *Plugin) Check(ctx context.Context, target *types.Target, endpoint *type
 		}
 
 		for _, cred := range wt.creds {
+			select {
+			case <-ctx.Done():
+				return findings, nil
+			default:
+			}
+
 			authHeaders := copyHeaders(headers)
 			authHeaders["Authorization"] = basicAuth(cred[0], cred[1])
 
-			resp, reqErr := client.Do(ctx, &scanner.Request{Method: "GET", URL: testURL, Headers: authHeaders})
+			breCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
+			resp, reqErr := client.Do(breCtx, &scanner.Request{Method: "GET", URL: testURL, Headers: authHeaders})
+			cancel()
+
 			if reqErr != nil || resp == nil {
 				continue
 			}
@@ -115,11 +124,19 @@ func (p *Plugin) Check(ctx context.Context, target *types.Target, endpoint *type
 
 	adminPages := []string{"/admin", "/administrator", "/wp-admin", "/wp-login.php"}
 	for _, pth := range adminPages {
+		select {
+		case <-ctx.Done():
+			return findings, nil
+		default:
+		}
+
 		testURL, err := joinURL(baseURL, pth)
 		if err != nil {
 			continue
 		}
-		resp, reqErr := client.Do(ctx, &scanner.Request{Method: "GET", URL: testURL, Headers: headers})
+		breCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
+		resp, reqErr := client.Do(breCtx, &scanner.Request{Method: "GET", URL: testURL, Headers: headers})
+		cancel()
 		if reqErr != nil || resp == nil {
 			continue
 		}

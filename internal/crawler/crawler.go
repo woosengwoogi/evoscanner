@@ -142,6 +142,7 @@ func (c *Crawler) Crawl(ctx context.Context, targetURL string) (*types.Target, e
 		}
 
 		if len(jsURLs) == 0 {
+			target.Endpoints = c.endpoints
 			return target, nil
 		}
 
@@ -306,6 +307,18 @@ func (c *Crawler) crawlURL(ctx context.Context, rawURL string, parentURL string,
 		c.mu.Unlock()
 	}
 
+	// Classify response - skip error pages but still crawl links
+	skipEndpoint := false
+	if resp != nil {
+		cls := types.ClassifyResponse(resp.StatusCode, []byte(resp.Body))
+		if cls == "error" || cls == "blind" {
+			skipEndpoint = true
+			if c.config.Verbose {
+				log.Printf("[*] Skipping error endpoint: %s (status: %d)", normalized, resp.StatusCode)
+			}
+		}
+	}
+
 	if c.config.CrawlAdaptive && resp != nil && resp.Latency > 0 {
 		latencyMs := resp.Latency
 		now := time.Now()
@@ -365,26 +378,33 @@ func (c *Crawler) crawlURL(ctx context.Context, rawURL string, parentURL string,
 	parsedURL, _ := url.Parse(normalized)
 	params := extractQueryParams(parsedURL)
 
-	// Add base endpoint
-	endpoint := types.Endpoint{
-		URL:       normalized,
-		Method:    "GET",
-		Params:    params,
-		ParentURL: parentURL,
-		Depth:     depth,
+	// Add base endpoint (skip if error/blind response)
+	if !skipEndpoint {
+		endpoint := types.Endpoint{
+			URL:        normalized,
+			Method:     "GET",
+			Params:     params,
+			ParentURL:  parentURL,
+			Depth:      depth,
+			StatusCode: 0,
+		}
+		if resp != nil {
+			endpoint.StatusCode = resp.StatusCode
+		}
+		c.mu.Lock()
+		c.endpoints = append(c.endpoints, endpoint)
+		c.mu.Unlock()
 	}
 
-	c.mu.Lock()
-	c.endpoints = append(c.endpoints, endpoint)
-	c.mu.Unlock()
+	// Extract forms (only from normal responses)
+	if !skipEndpoint && resp != nil {
+		forms := c.extractForms(normalized, resp.Body)
+		c.mu.Lock()
+		c.endpoints = append(c.endpoints, forms...)
+		c.mu.Unlock()
+	}
 
-	// Extract forms
-	forms := c.extractForms(normalized, resp.Body)
-	c.mu.Lock()
-	c.endpoints = append(c.endpoints, forms...)
-	c.mu.Unlock()
-
-	// Extract links and continue crawling
+	// Extract links and continue crawling (always, even for error pages)
 	links := c.extractLinks(resp.Body)
 	for _, link := range links {
 		absLink := c.resolveURL(normalized, link)

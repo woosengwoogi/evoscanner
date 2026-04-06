@@ -69,13 +69,10 @@ func (r *Router) Route(ctx context.Context, taskType TaskType, req *Request) (*R
 func (r *Router) selectProviders(taskType TaskType) (primary, fallback Provider) {
 	switch taskType {
 	case TaskGeneratePayload, TaskGenerateRule, TaskAnalyzeResponse:
-		// Code-heavy tasks → MiniMax primary, GPT-4.1 fallback
 		return r.coder, r.judge
-	case TaskJudgeFinding, TaskFeedbackSummary:
-		// Judgment tasks → GPT-4.1 primary, MiniMax fallback
+	case TaskAnalyzeEndpoints, TaskJudgeFinding, TaskFeedbackSummary:
 		return r.judge, r.coder
 	default:
-		// Unknown task → try coder first (cheaper)
 		return r.coder, r.judge
 	}
 }
@@ -173,6 +170,50 @@ Response body (first 2000 chars):
 	}
 
 	return r.Route(ctx, TaskAnalyzeResponse, req)
+}
+
+// AnalyzeEndpoints asks the LLM to prioritize endpoints and identify duplicates.
+func (r *Router) AnalyzeEndpoints(ctx context.Context, baseURL string, endpoints []string) (*Response, error) {
+	endpointsList := ""
+	for i, ep := range endpoints {
+		if i >= 200 {
+			endpointsList += fmt.Sprintf("\n... and %d more endpoints", len(endpoints)-200)
+			break
+		}
+		endpointsList += fmt.Sprintf("%d. %s\n", i+1, ep)
+	}
+
+	req := &Request{
+		Messages: []Message{
+			{
+				Role: RoleSystem,
+				Content: `You are a web security expert analyzing crawling results.
+Analyze the discovered endpoints and:
+1. Identify duplicate endpoints (return FLAT array of indices to REMOVE, keep first in each group)
+2. Prioritize endpoints by vulnerability potential (login, admin, api, upload, etc.)
+3. Suggest scan order
+
+Output a JSON object with:
+- "duplicates": FLAT array of endpoint indices to remove (not the first one, just duplicates)
+- "priority_order": array of endpoint indices in recommended scan order (keep first in each group)
+- "reasoning": brief explanation
+
+Be concise. Focus on security-relevant endpoints first.`,
+			},
+			{
+				Role: RoleUser,
+				Content: fmt.Sprintf(`Base URL: %s
+Endpoints to analyze:
+%s
+
+Provide analysis in JSON format with FLAT arrays.`, baseURL, endpointsList),
+			},
+		},
+		MaxTokens:   2048,
+		Temperature: 0.2,
+	}
+
+	return r.Route(ctx, TaskAnalyzeEndpoints, req)
 }
 
 // JudgeFinding asks the LLM to evaluate whether a finding is a true or false positive.

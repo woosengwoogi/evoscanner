@@ -2,14 +2,20 @@
 package main
 
 import (
+	"bufio"
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
+	"net/http"
 	"net/url"
 	"os"
 	"os/signal"
+	"sort"
 	"strings"
+	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/evoscanner/evoscanner/internal/config"
@@ -87,6 +93,206 @@ func printUsage() {
 	fmt.Println("Run 'evoscanner evolve -h' for evolution engine options.")
 }
 
+func runLLMEvolution(router *llm.Router, result *types.ScanResult, targetURL string, headers map[string]string) {
+	log.Printf("[*] Starting LLM evolution on %d findings...", len(result.Findings))
+
+	evolvedFindings := make([]types.Finding, 0)
+	autoAll := false
+	client := &http.Client{Timeout: 10 * time.Second}
+
+	// Progress tracking
+	spinners := "\\|/-"
+	spinnerIdx := 0
+
+	for i, finding := range result.Findings {
+		if finding.Severity == types.SeverityCritical || finding.Severity == types.SeverityHigh {
+			log.Printf("[*] [%d/%d] LLM: Found %s on %s (%s)", i+1, len(result.Findings), finding.PluginID, finding.URL, finding.Parameter)
+			fmt.Printf("\n[*] [%d/%d] LLM: Found %s on %s (%s)\n", i+1, len(result.Findings), finding.PluginID, finding.URL, finding.Parameter)
+
+			var decision string
+			if autoAll {
+				decision = "yes"
+			} else {
+				fmt.Printf("[*] [Y]es/[N]o/[A]ll auto: ")
+				reader := bufio.NewReader(os.Stdin)
+				input, _ := reader.ReadString('\n')
+				decision = strings.ToLower(strings.TrimSpace(input))
+				if decision == "" {
+					decision = "yes"
+				}
+				if decision == "a" || decision == "all" {
+					autoAll = true
+					decision = "yes"
+				}
+			}
+
+			if decision == "n" || decision == "no" {
+				continue
+			}
+
+			fmt.Printf("[*] LLM: Generating payloads...\n")
+			log.Printf("[*] [%d/%d] LLM: Generating payloads for %s on %s", i+1, len(result.Findings), finding.PluginID, finding.URL)
+			ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+			resp, err := router.GeneratePayloads(ctx, finding.PluginID, finding.Parameter, finding.Payload)
+			cancel()
+
+			if err != nil || resp == nil {
+				log.Printf("[WARN] [%d/%d] LLM generation failed: %v", i+1, len(result.Findings), err)
+				fmt.Printf("[WARN] LLM generation failed: %v\n", err)
+				continue
+			}
+
+			payloads := strings.Split(strings.TrimSpace(resp.Content), "\n")
+			var validPayloads []string
+			for _, p := range payloads {
+				p = strings.TrimSpace(p)
+				if p != "" && !strings.HasPrefix(p, "#") {
+					validPayloads = append(validPayloads, p)
+				}
+			}
+			totalPayloads := len(validPayloads)
+			fmt.Printf("[*] LLM: Generated %d payloads, testing...\n", totalPayloads)
+			log.Printf("[*] [%d/%d] LLM: Generated %d payloads, testing on %s", i+1, len(result.Findings), totalPayloads, finding.URL)
+
+			// Parallel payload testing with bounded workers
+			type payloadResult struct {
+				index   int
+				payload string
+				finding *types.Finding
+			}
+
+			var wg sync.WaitGroup
+			const maxWorkers = 10
+			activeWorkers := int32(0)
+			findingsMu := sync.Mutex{}
+
+			for j, payload := range validPayloads {
+				testURL := finding.URL
+				if finding.Parameter != "" {
+					if strings.Contains(testURL, "?") {
+						testURL += "&" + finding.Parameter + "=" + payload
+					} else {
+						testURL += "?" + finding.Parameter + "=" + payload
+					}
+				}
+
+				wg.Add(1)
+				go func(idx int, pl string, url string) {
+					defer wg.Done()
+
+					// Bounded concurrency
+					for {
+						active := atomic.LoadInt32(&activeWorkers)
+						if active < maxWorkers {
+							if atomic.CompareAndSwapInt32(&activeWorkers, active, active+1) {
+								break
+							}
+						}
+						time.Sleep(10 * time.Millisecond)
+					}
+					defer atomic.AddInt32(&activeWorkers, -1)
+
+					// Show progress with spinner
+					spinnerChar := spinners[spinnerIdx%len(spinners)]
+					fmt.Printf("\r[%c] [%d/%d] Testing %d/%d: %s", spinnerChar, i+1, len(result.Findings), idx+1, totalPayloads, pl)
+					log.Printf("[*] [%d/%d] Testing %d/%d: %s on %s", i+1, len(result.Findings), idx+1, totalPayloads, pl, url)
+
+					reqCtx, reqCancel := context.WithTimeout(context.Background(), 10*time.Second)
+					req, _ := http.NewRequestWithContext(reqCtx, "GET", url, nil)
+					httpResp, err := client.Do(req)
+					reqCancel()
+
+					if err == nil && httpResp != nil {
+						body := make([]byte, 4096)
+						httpResp.Body.Read(body)
+						httpResp.Body.Close()
+						bodyLower := strings.ToLower(string(body))
+						if isVulnerabilityIndicator(finding.PluginID, bodyLower) {
+							log.Printf("[!] [%d/%d] VULNERABLE: %s on %s", i+1, len(result.Findings), pl, url)
+							findingsMu.Lock()
+							evolvedFindings = append(evolvedFindings, types.Finding{
+								ID:          fmt.Sprintf("llm-evolved-%d", time.Now().UnixNano()+int64(idx)),
+								PluginID:    finding.PluginID,
+								Name:        finding.Name + " (LLM Evolved)",
+								Description: fmt.Sprintf("LLM-generated payload detected vulnerability"),
+								Severity:    finding.Severity,
+								Confidence:  0.8,
+								URL:         url,
+								Parameter:   finding.Parameter,
+								Payload:     pl,
+								Evidence:    fmt.Sprintf("Vulnerability indicator found in response"),
+								CWE:         finding.CWE,
+								Compliance:  finding.Compliance,
+							})
+							findingsMu.Unlock()
+							fmt.Printf("\r[!] [%d/%d] [%d/%d] VULNERABLE: %s\n", i+1, len(result.Findings), idx+1, totalPayloads, pl)
+						}
+					}
+				}(j, payload, testURL)
+
+				spinnerIdx++
+			}
+
+			wg.Wait()
+			fmt.Printf("\r[*] LLM: Tested %d payloads, found %d new\n", totalPayloads, len(evolvedFindings))
+			log.Printf("[*] [%d/%d] LLM: Tested %d payloads, found %d new", i+1, len(result.Findings), totalPayloads, len(evolvedFindings))
+		}
+	}
+
+	if len(evolvedFindings) > 0 {
+		evolvedResult := &types.ScanResult{
+			Target:    targetURL,
+			StartTime: result.StartTime,
+			EndTime:   time.Now(),
+			Findings:  evolvedFindings,
+			Summary: types.Summary{
+				TotalChecks:   len(evolvedFindings),
+				TotalFindings: len(evolvedFindings),
+				BySeverity:    map[string]int{"critical": countBySeverity(evolvedFindings, types.SeverityCritical), "high": countBySeverity(evolvedFindings, types.SeverityHigh), "medium": countBySeverity(evolvedFindings, types.SeverityMedium), "low": countBySeverity(evolvedFindings, types.SeverityLow), "info": countBySeverity(evolvedFindings, types.SeverityInfo)},
+			},
+		}
+
+		filename := targetURL + "-llm-evolution.html"
+		filename = strings.ReplaceAll(filename, "https://", "")
+		filename = strings.ReplaceAll(filename, "http://", "")
+		filename = strings.ReplaceAll(filename, "/", "_")
+		rep := reporter.New("html", filename)
+		if err := rep.Report(evolvedResult); err == nil {
+			log.Printf("[*] LLM evolution report saved to: %s", filename)
+			fmt.Printf("[*] LLM evolution report saved to: %s\n", filename)
+		}
+	}
+}
+
+func isVulnerabilityIndicator(pluginID, body string) bool {
+	indicators := map[string][]string{
+		"sql-injection":     {"sql", "syntax error", "mysql", "postgres", "sqlite", "oracle", "error in your sql"},
+		"xss":               {"<script", "javascript:", "onerror=", "onload=", "<img", "<svg"},
+		"command-injection": {"system", "exec", "shell", "cmd", "passthru"},
+		"path-traversal":    {"etc/passwd", "..\\", "../", "root:", "directory contents"},
+	}
+	for key, patterns := range indicators {
+		if strings.Contains(pluginID, key) {
+			for _, pattern := range patterns {
+				if strings.Contains(body, pattern) {
+					return true
+				}
+			}
+		}
+	}
+	return false
+}
+
+func countBySeverity(findings []types.Finding, sev types.Severity) int {
+	count := 0
+	for _, f := range findings {
+		if f.Severity == sev {
+			count++
+		}
+	}
+	return count
+}
+
 func cmdScan(args []string) {
 	fs := flag.NewFlagSet("scan", flag.ExitOnError)
 
@@ -95,7 +301,7 @@ func cmdScan(args []string) {
 	targetShort := fs.String("t", "", "Target URL to scan (shorthand)")
 
 	// Scan behavior
-	threads := fs.Int("threads", 1, "Number of concurrent threads")
+	threads := fs.Int("threads", 10, "Number of concurrent threads")
 	maxThreads := fs.Int("max-threads", 100, "Maximum threads for adaptive mode")
 	adaptive := fs.Bool("adaptive-threads", true, "Enable adaptive thread adjustment based on response time (default: enabled)")
 	probeCount := fs.Int("probe-count", 5, "Number of URLs to probe for latency measurement")
@@ -129,6 +335,10 @@ func cmdScan(args []string) {
 	// Evolution / Dynamic rules
 	rulesDir := fs.String("rules-dir", "data/rules", "Directory for dynamic detection rules")
 	noDynamic := fs.Bool("no-dynamic", false, "Disable dynamic rules from evolution engine")
+
+	// LLM Evolution
+	llmEvolution := fs.Bool("llm-evolution", false, "Enable LLM-guided payload evolution on findings")
+	llmSkipAll := fs.Bool("llm-skip-all", false, "Skip all LLM payload generation prompts")
 
 	// Output
 	outputFormat := fs.String("format", "html", "Output format: json, html")
@@ -276,6 +486,8 @@ func cmdScan(args []string) {
 		CrawlAdaptive:   *crawlAdaptive,
 		CrawlDelayMin:   *crawlDelayMin,
 		CrawlDelayMax:   *crawlDelayMax,
+		LLMEvolution:    *llmEvolution,
+		LLMSkipAll:      *llmSkipAll,
 	}
 
 	// Load checkpoint if resuming
@@ -410,6 +622,103 @@ func cmdScan(args []string) {
 		}
 
 		fmt.Printf("[*] Discovered %d endpoints\n", len(scanTarget.Endpoints))
+
+		const llmAnalysisThreshold = 50
+		if len(scanTarget.Endpoints) >= llmAnalysisThreshold {
+			cfg := loadLLMConfig()
+			if router, err := llm.NewRouterFromConfig(cfg); err == nil {
+				epStrings := make([]string, len(scanTarget.Endpoints))
+				for i, ep := range scanTarget.Endpoints {
+					epStrings[i] = ep.URL
+				}
+				fmt.Printf("[*] Running LLM analysis on %d endpoints...\n", len(epStrings))
+				resp, err := router.AnalyzeEndpoints(ctx, scanTarget.BaseURL, epStrings)
+				if err != nil {
+					log.Printf("[WARN] LLM endpoint analysis failed: %v", err)
+				} else {
+					content := resp.Content
+					if isVerbose {
+						fmt.Printf("[DEBUG] LLM raw response (first 500 chars): %s\n", truncateStr(content, 500))
+					}
+					if idx := strings.Index(content, "{"); idx >= 0 {
+						content = content[idx:]
+					}
+					if idx := strings.LastIndex(content, "}"); idx >= 0 {
+						content = content[:idx+1]
+					}
+					content = stripJSONComments(content)
+					if isVerbose {
+						fmt.Printf("[DEBUG] LLM extracted JSON (first 500 chars): %s\n", truncateStr(content, 500))
+					}
+
+					var rawAnalysis struct {
+						Duplicates    json.RawMessage `json:"duplicates"`
+						PriorityOrder json.RawMessage `json:"priority_order"`
+						Reasoning     string          `json:"reasoning"`
+					}
+					if json.Unmarshal([]byte(content), &rawAnalysis) != nil {
+						log.Printf("[WARN] LLM returned invalid JSON, skipping endpoint analysis: %s", truncateStr(content, 200))
+					} else {
+						if isVerbose {
+							fmt.Printf("[DEBUG] JSON parsed - duplicates: %s, priority: %s\n", string(rawAnalysis.Duplicates), string(rawAnalysis.PriorityOrder))
+						}
+						duplicateSet := make(map[int]bool)
+						if len(rawAnalysis.Duplicates) > 0 {
+							flatDupes := flattenIntArray(rawAnalysis.Duplicates)
+							if isVerbose {
+								fmt.Printf("[DEBUG] flattenIntArray result: %v\n", flatDupes)
+							}
+							for _, idx := range flatDupes {
+								if idx >= 0 && idx < len(scanTarget.Endpoints) {
+									duplicateSet[idx] = true
+								}
+							}
+						}
+
+						var priorityOrder []int
+						if len(rawAnalysis.PriorityOrder) > 0 {
+							priorityOrder = flattenIntArray(rawAnalysis.PriorityOrder)
+						}
+
+						filtered := make([]types.Endpoint, 0, len(scanTarget.Endpoints))
+						for i, ep := range scanTarget.Endpoints {
+							if !duplicateSet[i] {
+								filtered = append(filtered, ep)
+							}
+						}
+
+						if len(priorityOrder) > 0 {
+							priorityMap := make(map[int]int)
+							for newIdx, oldIdx := range priorityOrder {
+								priorityMap[oldIdx] = newIdx
+							}
+							sort.SliceStable(filtered, func(i, j int) bool {
+								oi := -1
+								oj := -1
+								for idx, ep := range scanTarget.Endpoints {
+									if !duplicateSet[idx] {
+										if ep.URL == filtered[i].URL {
+											oi = priorityMap[idx]
+										}
+										if ep.URL == filtered[j].URL {
+											oj = priorityMap[idx]
+										}
+									}
+								}
+								return oi < oj
+							})
+						}
+
+						removed := len(scanTarget.Endpoints) - len(filtered)
+						scanTarget.Endpoints = filtered
+						fmt.Printf("[*] LLM: removed %d duplicates, %d endpoints remaining (ordered by priority)\n", removed, len(filtered))
+						if isVerbose && rawAnalysis.Reasoning != "" {
+							fmt.Printf("[*] LLM reasoning: %s\n", rawAnalysis.Reasoning)
+						}
+					}
+				}
+			}
+		}
 	}
 
 	// Fingerprint phase — detect target technology stack
@@ -510,6 +819,25 @@ func cmdScan(args []string) {
 		rep := reporter.New("json", "")
 		if err := rep.Report(result); err != nil {
 			log.Fatalf("[ERROR] Report generation failed: %v", err)
+		}
+	}
+
+	if config.LLMEvolution && len(result.Findings) > 0 {
+		cfg := loadLLMConfig()
+		if router, err := llm.NewRouterFromConfig(cfg); err == nil {
+			fmt.Printf("\n[*] LLM evolution available for %d findings\n", len(result.Findings))
+			fmt.Print("[*] Run LLM evolution? [Y]es/[N]o: ")
+			reader := bufio.NewReader(os.Stdin)
+			input, _ := reader.ReadString('\n')
+			input = strings.ToLower(strings.TrimSpace(input))
+			if input == "" || input == "y" || input == "yes" {
+				runLLMEvolution(router, result, scanTarget.BaseURL, scanTarget.Headers)
+				fmt.Println("[*] LLM evolution complete.")
+			} else {
+				fmt.Println("[*] LLM evolution skipped.")
+			}
+		} else {
+			fmt.Printf("[WARN] LLM not available: %v\n", err)
 		}
 	}
 
@@ -872,4 +1200,44 @@ func truncID(id string) string {
 		return id[:17] + "..."
 	}
 	return id
+}
+
+func truncateStr(s string, maxLen int) string {
+	if len(s) > maxLen {
+		return s[:maxLen] + "..."
+	}
+	return s
+}
+
+func flattenIntArray(data json.RawMessage) []int {
+	var flat []int
+	if err := json.Unmarshal(data, &flat); err == nil {
+		return flat
+	}
+	var nested [][]int
+	if err := json.Unmarshal(data, &nested); err == nil {
+		for _, arr := range nested {
+			flat = append(flat, arr...)
+		}
+		return flat
+	}
+	return nil
+}
+
+func stripJSONComments(s string) string {
+	var result strings.Builder
+	inString := false
+	for i := 0; i < len(s); i++ {
+		if s[i] == '"' && (i == 0 || s[i-1] != '\\') {
+			inString = !inString
+		}
+		if !inString && i+1 < len(s) && s[i] == '/' && s[i+1] == '/' {
+			for i < len(s) && s[i] != '\n' {
+				i++
+			}
+			continue
+		}
+		result.WriteByte(s[i])
+	}
+	return result.String()
 }

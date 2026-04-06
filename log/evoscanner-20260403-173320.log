@@ -1,0 +1,51 @@
+2026/04/03 17:33:41 crawler.go:368: [*] EMA: 682.0ms, delay: 300ms
+2026/04/03 17:33:41 crawler.go:368: [*] EMA: 577.0ms, delay: 300ms
+2026/04/03 17:33:42 crawler.go:368: [*] EMA: 494.4ms, delay: 250ms
+2026/04/03 17:33:42 crawler.go:368: [*] EMA: 428.3ms, delay: 250ms
+2026/04/03 17:33:42 crawler.go:368: [*] EMA: 375.7ms, delay: 250ms
+2026/04/03 17:33:43 crawler.go:368: [*] EMA: 333.5ms, delay: 250ms
+2026/04/03 17:33:43 crawler.go:368: [*] EMA: 300.0ms, delay: 250ms
+2026/04/03 17:33:44 crawler.go:368: [*] EMA: 273.0ms, delay: 250ms
+2026/04/03 17:33:44 crawler.go:368: [*] EMA: 251.4ms, delay: 250ms
+2026/04/03 17:33:45 crawler.go:368: [*] EMA: 234.1ms, delay: 250ms
+2026/04/03 17:33:45 crawler.go:368: [*] EMA: 220.3ms, delay: 250ms
+2026/04/03 17:33:45 crawler.go:368: [*] EMA: 209.0ms, delay: 250ms
+2026/04/03 17:33:46 crawler.go:368: [*] EMA: 200.2ms, delay: 250ms
+2026/04/03 17:33:46 crawler.go:368: [*] EMA: 193.2ms, delay: 250ms
+2026/04/03 17:33:47 crawler.go:368: [*] EMA: 187.4ms, delay: 250ms
+2026/04/03 17:33:47 crawler.go:368: [*] EMA: 182.7ms, delay: 200ms
+2026/04/03 17:33:47 crawler.go:368: [*] EMA: 178.9ms, delay: 200ms
+2026/04/03 17:33:48 crawler.go:368: [*] EMA: 174.2ms, delay: 200ms
+2026/04/03 17:33:48 crawler.go:368: [*] EMA: 172.1ms, delay: 200ms
+2026/04/03 17:33:48 crawler.go:368: [*] EMA: 170.5ms, delay: 200ms
+2026/04/03 17:33:49 crawler.go:368: [*] EMA: 169.2ms, delay: 200ms
+2026/04/03 17:33:49 crawler.go:368: [*] EMA: 168.2ms, delay: 200ms
+2026/04/03 17:33:50 crawler.go:317: [*] Skipping error endpoint: https://demo.testfire.net/cgi.exe (status: 404)
+2026/04/03 17:33:50 crawler.go:368: [*] EMA: 167.3ms, delay: 200ms
+2026/04/03 17:33:50 crawler.go:368: [*] EMA: 166.7ms, delay: 200ms
+2026/04/03 17:33:50 crawler.go:368: [*] EMA: 166.3ms, delay: 200ms
+2026/04/03 17:33:51 crawler.go:368: [*] EMA: 165.7ms, delay: 200ms
+2026/04/03 17:33:51 crawler.go:368: [*] EMA: 165.3ms, delay: 200ms
+2026/04/03 17:33:51 crawler.go:368: [*] EMA: 165.3ms, delay: 200ms
+2026/04/03 17:33:52 crawler.go:368: [*] EMA: 165.2ms, delay: 200ms
+2026/04/03 17:33:52 crawler.go:368: [*] EMA: 165.2ms, delay: 150ms
+2026/04/03 17:33:52 crawler.go:368: [*] EMA: 165.1ms, delay: 150ms
+2026/04/03 17:33:53 crawler.go:368: [*] EMA: 164.9ms, delay: 150ms
+2026/04/03 17:33:53 crawler.go:368: [*] EMA: 164.9ms, delay: 150ms
+2026/04/03 17:33:53 crawler.go:368: [*] EMA: 164.7ms, delay: 150ms
+2026/04/03 17:33:54 crawler.go:368: [*] EMA: 164.6ms, delay: 150ms
+2026/04/03 17:33:54 crawler.go:317: [*] Skipping error endpoint: https://demo.testfire.net/default.jsp?content=security.htm (status: 404)
+2026/04/03 17:33:54 crawler.go:368: [*] EMA: 164.5ms, delay: 150ms
+2026/04/03 17:33:54 crawler.go:368: [*] EMA: 164.4ms, delay: 150ms
+2026/04/03 17:33:55 crawler.go:368: [*] EMA: 164.3ms, delay: 150ms
+2026/04/03 17:33:55 crawler.go:368: [*] EMA: 164.2ms, delay: 150ms
+2026/04/03 17:33:55 crawler.go:368: [*] EMA: 164.4ms, delay: 150ms
+2026/04/03 17:33:56 crawler.go:368: [*] EMA: 163.7ms, delay: 150ms
+2026/04/03 17:33:56 crawler.go:102: [*] Crawl complete: 41 URLs, 74 endpoints (15.8s)
+2026/04/03 17:34:47 engine.go:284: [*] Probing 5 endpoints for latency...
+2026/04/03 17:34:48 engine.go:296: [*] Probe complete: avg latency=164ms, threads=10
+2026/04/03 17:34:50 engine.go:901: [*] Fast (avg: 163ms), threads: 10 -> 20
+2026/04/03 17:34:52 engine.go:901: [*] Fast (avg: 171ms), threads: 20 -> 30
+2026/04/03 17:34:54 engine.go:901: [*] Fast (avg: 176ms), threads: 30 -> 45
+2026/04/03 17:34:56 engine.go:901: [*] Fast (avg: 168ms), threads: 45 -> 67
+2026/04/03 17:34:58 engine.go:901: [*] Fast (avg: 257ms), threads: 67 -> 100

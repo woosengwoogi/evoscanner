@@ -1,14 +1,17 @@
 package scanner
 
 import (
+	"bufio"
 	"context"
 	"fmt"
 	"log"
+	"os"
 	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
 
+	"github.com/evoscanner/evoscanner/internal/evolution/llm"
 	"github.com/evoscanner/evoscanner/pkg/types"
 )
 
@@ -37,6 +40,18 @@ type Engine struct {
 	emaAlpha            float64
 	cooldownUntil       time.Time
 	threadCooldownUntil time.Time
+
+	// LLM Evolution
+	llmRouter   *llm.Router
+	llmSkipAll  bool
+	llmRespChan chan LLMResponse
+	llmActive   atomic.Bool
+
+	// Interactive skip
+	skipCurrent atomic.Bool
+	skipChan    chan struct{}
+	skipPlugins map[string]bool
+	skipMu      sync.Mutex
 }
 
 // Stats tracks scan progress.
@@ -47,17 +62,180 @@ type Stats struct {
 	StartTime       time.Time
 }
 
+type LLMResponse struct {
+	Payloads   []string
+	Decision   string
+	SkipPlugin string
+}
+
+type LLMRequest struct {
+	RespChan       chan LLMResponse
+	PluginID       string
+	VulnType       string
+	URL            string
+	Parameter      string
+	CurrentPayload string
+}
+
 // NewEngine creates a new scan engine.
 func NewEngine(config *types.ScanConfig, registry *Registry, client HttpClient) *Engine {
 	return &Engine{
-		config:     config,
-		registry:   registry,
-		client:     client,
-		findings:   make([]types.Finding, 0),
-		endpoints:  make([]types.Endpoint, 0),
-		emaAlpha:   0.2,
-		emaLatency: 0,
+		config:      config,
+		registry:    registry,
+		client:      client,
+		findings:    make([]types.Finding, 0),
+		endpoints:   make([]types.Endpoint, 0),
+		emaAlpha:    0.2,
+		emaLatency:  0,
+		skipPlugins: make(map[string]bool),
 	}
+}
+
+// SetLLMRouter sets the LLM router for payload evolution.
+func (e *Engine) SetLLMRouter(router *llm.Router) {
+	e.llmRouter = router
+}
+
+// SetLLMSkipAll sets the skip-all flag for LLM prompts.
+func (e *Engine) SetLLMSkipAll(skip bool) {
+	e.llmSkipAll = skip
+}
+
+func (e *Engine) llmEvolutionLoop(reqChan <-chan LLMRequest, done <-chan struct{}) {
+	autoAnswerAll := false
+
+	for {
+		select {
+		case <-done:
+			return
+		case req := <-reqChan:
+			e.skipMu.Lock()
+			shouldSkip := e.skipPlugins[req.PluginID]
+			e.skipMu.Unlock()
+
+			e.llmActive.Store(true)
+
+			var decision string
+
+			if shouldSkip {
+				decision = "skip"
+				fmt.Printf("[S] (plugin %s already skipped)\n", req.PluginID)
+			} else if autoAnswerAll {
+				decision = "yes"
+			} else {
+				fmt.Printf("\n[*] LLM: Found %s on %s (%s)\n", req.VulnType, req.URL, req.Parameter)
+				fmt.Printf("[*] [Y]es/[N]o/[S]kip plugin/[A]ll: ")
+				reader := bufio.NewReader(os.Stdin)
+				input, err := reader.ReadString('\n')
+				if err != nil {
+					decision = "no"
+				} else {
+					decision = strings.ToLower(strings.TrimSpace(input))
+				}
+				if decision == "" {
+					decision = "yes"
+				}
+			}
+			e.llmActive.Store(false)
+
+			if decision == "a" || decision == "all" {
+				autoAnswerAll = true
+				fmt.Printf("[*] LLM: Auto mode enabled\n")
+				decision = "yes"
+			}
+			if decision == "s" || decision == "skip" || shouldSkip {
+				e.skipMu.Lock()
+				e.skipPlugins[req.PluginID] = true
+				e.skipMu.Unlock()
+				fmt.Printf("[*] LLM: Skipping plugin %s\n", req.PluginID)
+				req.RespChan <- LLMResponse{SkipPlugin: req.PluginID, Decision: "skip_plugin"}
+				continue
+			}
+			if decision == "n" || decision == "no" {
+				req.RespChan <- LLMResponse{Decision: "no"}
+				continue
+			}
+
+			fmt.Printf("[*] LLM: Generating payloads...\n")
+			ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+			resp, err := e.llmRouter.GeneratePayloads(ctx, req.VulnType, req.Parameter, req.CurrentPayload)
+			cancel()
+
+			if err != nil || resp == nil {
+				fmt.Printf("[WARN] LLM generation failed: %v\n", err)
+				req.RespChan <- LLMResponse{Decision: "no"}
+				continue
+			}
+
+			payloads := strings.Split(strings.TrimSpace(resp.Content), "\n")
+			var validPayloads []string
+			for _, p := range payloads {
+				p = strings.TrimSpace(p)
+				if p != "" && !strings.HasPrefix(p, "#") {
+					validPayloads = append(validPayloads, p)
+				}
+			}
+
+			fmt.Printf("[*] LLM: Generated %d payloads\n", len(validPayloads))
+			req.RespChan <- LLMResponse{Payloads: validPayloads, Decision: "yes"}
+		}
+	}
+}
+
+func (e *Engine) skipListener(done <-chan struct{}) {
+	stat, _ := os.Stdin.Stat()
+	if (stat.Mode() & os.ModeCharDevice) == 0 {
+		return
+	}
+
+	reader := bufio.NewReader(os.Stdin)
+	for {
+		select {
+		case <-done:
+			return
+		default:
+			char, err := reader.ReadByte()
+			if err != nil {
+				return
+			}
+			if char == 'n' || char == 'N' {
+				select {
+				case e.skipChan <- struct{}{}:
+					fmt.Print("\r[*] Skipping current check...\n")
+				default:
+				}
+			}
+		}
+	}
+}
+
+func (e *Engine) testLLMPayload(ctx context.Context, pluginID, url, parameter, payload string) []types.Finding {
+	req := &Request{
+		Method: "GET",
+		URL:    url,
+	}
+	if parameter != "" {
+		req.URL = url + "?" + parameter + "=" + payload
+	}
+	resp, err := e.client.Do(ctx, req)
+	if err != nil || resp == nil {
+		return nil
+	}
+	bodyLower := strings.ToLower(resp.Body)
+	if strings.Contains(bodyLower, "sql") || strings.Contains(bodyLower, "error") || strings.Contains(bodyLower, "syntax") {
+		return []types.Finding{{
+			ID:         fmt.Sprintf("llm-%d", time.Now().UnixNano()),
+			PluginID:   pluginID,
+			Name:       "LLM-generated payload finding",
+			Severity:   types.SeverityHigh,
+			Confidence: 0.7,
+			URL:        url,
+			Parameter:  parameter,
+			Payload:    payload,
+			Evidence:   fmt.Sprintf("LLM payload triggered response anomaly"),
+		}}
+	}
+	return nil
 }
 
 // Scan runs all registered plugins against the target.
@@ -184,6 +362,19 @@ func (e *Engine) Scan(ctx context.Context, target *types.Target, loadedState *ty
 	var activeWorkers int32
 	var wg sync.WaitGroup
 
+	// Start LLM evolution loop if enabled
+	var llmReqChan chan LLMRequest
+	var llmDone chan struct{}
+	if e.config.LLMEvolution && e.llmRouter != nil {
+		llmReqChan = make(chan LLMRequest, 5)
+		llmDone = make(chan struct{})
+		go e.llmEvolutionLoop(llmReqChan, llmDone)
+	}
+
+	// Start interactive skip listener
+	e.skipChan = make(chan struct{}, 1)
+	go e.skipListener(progressDone)
+
 	// Start adaptive thread adjustment goroutine
 	if e.config.AdaptiveThreads {
 		go func() {
@@ -258,27 +449,27 @@ func (e *Engine) Scan(ctx context.Context, target *types.Target, loadedState *ty
 				}
 
 				emaVal := e.emaLatency
-				if emaVal > 3000 {
-					e.currentDelay += 300
-				} else if emaVal > 2000 {
-					e.currentDelay += 200
-				} else if emaVal > 1000 {
-					e.currentDelay += 100
-				} else if emaVal < 500 && e.currentDelay > 0 {
-					e.currentDelay -= 50
-				} else if emaVal < 300 {
-					e.currentDelay -= 25
+				targetDelay := int(emaVal * 0.3)
+				if targetDelay > e.config.DelayMs && e.config.DelayMs > 0 {
+					targetDelay = e.config.DelayMs
 				}
 
-				maxDelay := e.config.DelayMs
-				if maxDelay <= 0 {
-					maxDelay = 1000
+				if targetDelay > 500 {
+					targetDelay = 500
 				}
+
+				step := (targetDelay - e.currentDelay) / 3
+				if step == 0 && targetDelay != e.currentDelay {
+					if targetDelay > e.currentDelay {
+						step = 10
+					} else {
+						step = -10
+					}
+				}
+				e.currentDelay += step
+
 				if e.currentDelay < 0 {
 					e.currentDelay = 0
-				}
-				if e.currentDelay > maxDelay {
-					e.currentDelay = maxDelay
 				}
 				delayToUse := e.currentDelay
 				e.mu.Unlock()
@@ -290,6 +481,30 @@ func (e *Engine) Scan(ctx context.Context, target *types.Target, loadedState *ty
 					case <-time.After(time.Duration(delayToUse) * time.Millisecond):
 					}
 				}
+			}
+
+			skipped := false
+			select {
+			case <-e.skipChan:
+				e.skipCurrent.Store(false)
+				skipped = true
+			case <-itemCtx.Done():
+				return
+			default:
+			}
+
+			if skipped {
+				atomic.AddInt64(&e.stats.CompletedChecks, 1)
+				return
+			}
+
+			e.skipMu.Lock()
+			shouldSkip := e.skipPlugins[wi.plugin.ID()]
+			e.skipMu.Unlock()
+
+			if shouldSkip {
+				atomic.AddInt64(&e.stats.CompletedChecks, 1)
+				return
 			}
 
 			findings, err := wi.plugin.Check(itemCtx, target, wi.endpoint, e.client)
@@ -308,6 +523,52 @@ func (e *Engine) Scan(ctx context.Context, target *types.Target, loadedState *ty
 				e.findings = append(e.findings, findings...)
 				e.mu.Unlock()
 				atomic.AddInt64(&e.stats.TotalFindings, int64(len(findings)))
+
+				if llmReqChan != nil && !e.llmSkipAll {
+					for _, f := range findings {
+						respChan := make(chan LLMResponse, 1)
+						req := LLMRequest{
+							RespChan:       respChan,
+							PluginID:       wi.plugin.ID(),
+							VulnType:       wi.plugin.ID(),
+							URL:            f.URL,
+							Parameter:      f.Parameter,
+							CurrentPayload: f.Payload,
+						}
+						select {
+						case llmReqChan <- req:
+							resp := <-respChan
+							if resp.Decision == "skip_all" {
+								e.llmSkipAll = true
+							}
+							if resp.SkipPlugin != "" {
+								e.skipMu.Lock()
+								e.skipPlugins[resp.SkipPlugin] = true
+								e.skipMu.Unlock()
+								fmt.Printf("[*] Skipping all checks for plugin: %s\n", resp.SkipPlugin)
+							}
+							if len(resp.Payloads) > 0 {
+								fmt.Printf("[*] Testing %d LLM payloads on %s...\n", len(resp.Payloads), f.URL)
+								for _, payload := range resp.Payloads {
+									select {
+									case <-itemCtx.Done():
+										break
+									default:
+										llmFindings := e.testLLMPayload(itemCtx, wi.plugin.ID(), f.URL, f.Parameter, payload)
+										if len(llmFindings) > 0 {
+											e.mu.Lock()
+											e.findings = append(e.findings, llmFindings...)
+											e.mu.Unlock()
+											atomic.AddInt64(&e.stats.TotalFindings, int64(len(llmFindings)))
+										}
+									}
+								}
+							}
+						case <-itemCtx.Done():
+						default:
+						}
+					}
+				}
 			}
 
 			atomic.AddInt64(&e.stats.CompletedChecks, 1)
@@ -315,6 +576,14 @@ func (e *Engine) Scan(ctx context.Context, target *types.Target, loadedState *ty
 	}
 
 	wg.Wait()
+
+	// Final checkpoint save (ensures at least one save even for fast scans < 30s)
+	e.saveCheckpoint(target.BaseURL)
+
+	// Stop LLM evolution loop
+	if llmDone != nil {
+		close(llmDone)
+	}
 
 	// Stop progress display
 	close(progressDone)
@@ -368,7 +637,6 @@ func (e *Engine) printProgress(final bool) {
 
 	pct := float64(completed) / float64(total) * 100
 
-	// ETA calculation
 	elapsed := time.Since(e.stats.StartTime)
 	eta := "calculating..."
 	if completed > 0 {
@@ -382,23 +650,29 @@ func (e *Engine) printProgress(final bool) {
 		}
 	}
 
-	// Current work info
 	plugin, _ := e.currentPlugin.Load().(string)
 	url, _ := e.currentURL.Load().(string)
 
-	// Truncate URL for display
 	const maxURLLen = 50
 	displayURL := url
 	if len(displayURL) > maxURLLen {
 		displayURL = displayURL[:maxURLLen-3] + "..."
 	}
 
+	if e.llmActive.Load() {
+		return
+	}
+
+	spinners := "|/-\\"
+	idx := (int(elapsed.Milliseconds()) / 300) % len(spinners)
+	spinner := rune(spinners[idx])
+
 	if final {
 		fmt.Printf("\r[*] %d/%d (100%%) | %d findings | done%s\n",
 			completed, total, found, strings.Repeat(" ", 40))
 	} else {
-		fmt.Printf("\r[*] %d/%d (%.0f%%) | %d findings | ETA %s | %s → %s%s",
-			completed, total, pct, found, eta, plugin, displayURL, strings.Repeat(" ", 10))
+		fmt.Printf("\r%c %d/%d (%.0f%%) | %d findings | ETA %s | %s → %s%s",
+			spinner, completed, total, pct, found, eta, plugin, displayURL, strings.Repeat(" ", 10))
 	}
 }
 
@@ -572,12 +846,12 @@ func (e *Engine) initAdaptiveThreads() {
 	e.timeoutCount.Store(0)
 }
 
-// checkAndAdjustThreads checks recent latency and adjusts thread count.
+// checkAndAdjustThreads adjusts thread count based on latency.
+// Fast server → increase threads aggressively
+// Slow server → decrease threads conservatively
 func (e *Engine) checkAndAdjustThreads() {
 	lastLatency := e.client.GetLastLatency()
 	avgLatency := e.client.GetRecentLatency()
-
-	log.Printf("[DEBUG] checkAndAdjustThreads: last=%d, avg=%d", lastLatency, avgLatency)
 
 	if avgLatency == 0 {
 		return
@@ -587,61 +861,70 @@ func (e *Engine) checkAndAdjustThreads() {
 
 	current := e.currentThreads.Load()
 	maxThreads := int32(e.config.MaxThreads)
-	minThreads := int32(1)
+	minThreads := int32(5)
 
 	slowThresholdMs := e.config.SlowThreshold.Milliseconds()
 	now := time.Now()
 
 	if lastLatency > slowThresholdMs {
 		var newThreads int32
-		if current > 50 {
-			newThreads = int32(float32(current) * 0.8)
+		if current > 30 {
+			newThreads = int32(float32(current) * 0.7)
+		} else if current > 15 {
+			newThreads = int32(float32(current) * 0.6)
 		} else {
-			newThreads = current - 1
+			newThreads = current / 2
 		}
 		if newThreads < minThreads {
 			newThreads = minThreads
 		}
 		if newThreads != current {
 			e.currentThreads.Store(newThreads)
-			cooldownMs := int(lastLatency) * int(current)
-			e.threadCooldownUntil = now.Add(time.Duration(cooldownMs) * time.Millisecond)
-			log.Printf("[*] Slow response (last: %dms, avg: %dms > %dms), threads: %d -> %d, cooldown: %dms",
-				lastLatency, avgLatency, slowThresholdMs, current, newThreads, cooldownMs)
+			e.threadCooldownUntil = now.Add(500 * time.Millisecond)
+			log.Printf("[*] Slow (last: %dms, avg: %dms), threads: %d -> %d", lastLatency, avgLatency, current, newThreads)
 		}
-	} else if avgLatency < 500 && current < maxThreads {
+	} else if avgLatency < 300 && current < maxThreads {
 		if now.Before(e.threadCooldownUntil) {
 			return
 		}
-		newThreads := current + 1
+		var newThreads int32
+		if current < 10 {
+			newThreads = current + 5
+		} else if current < 30 {
+			newThreads = current + 10
+		} else {
+			newThreads = int32(float32(current) * 1.5)
+		}
 		if newThreads > maxThreads {
 			newThreads = maxThreads
 		}
 		if newThreads != current {
 			e.currentThreads.Store(newThreads)
-			cooldownMs := int(avgLatency) * int(newThreads)
-			e.threadCooldownUntil = now.Add(time.Duration(cooldownMs) * time.Millisecond)
-			log.Printf("[*] Fast response (avg: %dms < 500ms), threads: %d -> %d, cooldown: %dms",
-				avgLatency, current, newThreads, cooldownMs)
+			e.threadCooldownUntil = now.Add(200 * time.Millisecond)
+			log.Printf("[*] Fast (avg: %dms), threads: %d -> %d", avgLatency, current, newThreads)
 		}
 	}
 }
 
-// recordTimeout increments timeout count and reduces threads.
+// recordTimeout reduces threads and increases delay on timeout.
 func (e *Engine) recordTimeout() {
 	count := e.timeoutCount.Add(1)
 	current := e.currentThreads.Load()
-	newThreads := current - 1
-	if newThreads < 1 {
-		newThreads = 1
+	newThreads := current / 2
+	if newThreads < 5 {
+		newThreads = 5
 	}
 	e.currentThreads.Store(newThreads)
-	avgLatency := e.avgLatencyMs.Load()
-	cooldownMs := int(avgLatency) * int(current)
-	e.threadCooldownUntil = time.Now().Add(time.Duration(cooldownMs) * time.Millisecond)
-	if count%3 == 0 {
-		log.Printf("[Timeout #%d] Threads: %d, AvgLatency: %dms, CurrentDelay: %dms, cooldown: %dms",
-			count, e.currentThreads.Load(), avgLatency, e.currentDelay, cooldownMs)
+	e.mu.Lock()
+	e.currentDelay += 100
+	if e.currentDelay > 2000 {
+		e.currentDelay = 2000
+	}
+	e.mu.Unlock()
+	e.threadCooldownUntil = time.Now().Add(2 * time.Second)
+	if count%5 == 0 {
+		log.Printf("[Timeout #%d] Threads: %d -> %d, Delay: %dms",
+			count, current, newThreads, e.currentDelay)
 	}
 }
 

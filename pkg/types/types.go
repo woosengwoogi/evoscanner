@@ -53,6 +53,7 @@ type Endpoint struct {
 	Depth      int               `json:"depth"`
 	HasForm    bool              `json:"has_form"`
 	FormAction string            `json:"form_action,omitempty"`
+	StatusCode int               `json:"status_code,omitempty"`
 }
 
 // Parameter represents an HTTP parameter.
@@ -227,6 +228,11 @@ type ScanConfig struct {
 	CrawlAdaptive bool `json:"crawl_adaptive"`
 	CrawlDelayMin int  `json:"crawl_delay_min"`
 	CrawlDelayMax int  `json:"crawl_delay_max"`
+
+	// LLM Evolution settings
+	LLMEvolution bool `json:"llm_evolution"`  // Enable LLM-guided payload evolution
+	LLMSkipAll   bool `json:"llm_skip_all"`   // Skip all LLM prompts (once set by user)
+	LLMQuickMode bool `json:"llm_quick_mode"` // Skip prompt, use defaults
 }
 
 // DefaultConfig returns a sane default configuration.
@@ -292,6 +298,37 @@ func IsStaticResource(url string) bool {
 		}
 	}
 	return false
+}
+
+var errorKeywords = []string{
+	"404", "not found", "error", "exception", "access denied",
+	"forbidden", "unauthorized", "bad request", "server error",
+	"internal server error", "service unavailable", "gateway timeout",
+	"java.lang.", "asp.net", "php warning", "python traceback",
+	"stack trace", "at line", "undefined index",
+}
+
+func ClassifyResponse(statusCode int, body []byte) string {
+	if statusCode >= 400 && statusCode < 600 {
+		return "error"
+	}
+	if statusCode == 0 {
+		return "blind"
+	}
+	bodyLower := strings.ToLower(string(body[:min(500, len(body))]))
+	for _, kw := range errorKeywords {
+		if strings.Contains(bodyLower, kw) {
+			return "error"
+		}
+	}
+	return "normal"
+}
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }
 
 // RemoveSessionID removes session IDs from URL (jsessionid, phpsessid, asp.net session, etc.)

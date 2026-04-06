@@ -34,7 +34,20 @@ func NewMiniMax(apiKey, baseURL, model string) *MiniMaxProvider {
 func (p *MiniMaxProvider) Name() string { return "minimax" }
 
 func (p *MiniMaxProvider) Available() bool {
-	return p.apiKey != ""
+	if p.apiKey == "" {
+		return false
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	req := &Request{
+		Messages: []Message{
+			{Role: RoleUser, Content: "ping"},
+		},
+		MaxTokens: 5,
+	}
+	_, err := p.Generate(ctx, req)
+	return err == nil
 }
 
 func (p *MiniMaxProvider) Generate(ctx context.Context, req *Request) (*Response, error) {
